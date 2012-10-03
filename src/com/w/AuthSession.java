@@ -11,6 +11,7 @@ import org.helyx.basics4me.io.BufferedReader;
 
 import com.futurice.tantalum3.Task;
 import com.futurice.tantalum3.Worker;
+import com.futurice.tantalum3.log.L;
 import com.futurice.tantalum3.net.HttpGetter;
 
 public class AuthSession {
@@ -49,9 +50,14 @@ public class AuthSession {
     private String sessionid;
     private String server_url;
     
-    private String access_token;
+    private String accessToken;
     
-    public void setArg(String key, String value) {
+    public String getAccessToken() {
+		return accessToken;
+	}
+
+
+	public void setArg(String key, String value) {
     	if (!firstArg) {
     		bld.append("&");
     	} else {
@@ -67,6 +73,7 @@ public class AuthSession {
 
     private void initAuth() {
     	
+    	sessionid = "";
     	server_url = "http://authorizr.herokuapp.com";
     	bld = new StringBuffer( server_url + "/api/v1/create_session/?");
     	firstArg = true;
@@ -134,9 +141,43 @@ public class AuthSession {
 		}
 		return null;
 		*/
-   }
+    }
 
+    
+     
+    
+    private void doFetchToken() {
     	
+    	String access_token_url = server_url+"/api/v1/fetch_access_token/?sessionid=" + sessionid;
+        HttpGetter g = new HttpGetter(access_token_url, 0);
+        byte[] bytes = (byte[]) g.doInBackground(null);
+         
+        ByteArrayInputStream is = new ByteArrayInputStream(bytes);
+        BufferedReader r = new BufferedReader(new InputStreamReader(is));
+        try {
+			accessToken = r.readLine();
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+        L.i("", "Access token now " + accessToken);
+    }
+    private class FetchTokenTask extends Task {
+
+		protected Object doInBackground(Object in) {
+			// TODO Auto-generated method stub
+			doFetchToken();
+			return accessToken;
+			
+		}
+    	
+    }
+    
+    public void fetchTokenForSession() {
+    	Worker.fork(new FetchTokenTask());    	
+    	
+    	
+    }
     private class StartAuthTask extends Task {
 
 		protected Object doInBackground(Object in) {
@@ -146,7 +187,7 @@ public class AuthSession {
 		}
     	
     }
-
+    
     public void startAuth() {
     	System.out.println("Starting");
     	Worker.fork(new StartAuthTask());
