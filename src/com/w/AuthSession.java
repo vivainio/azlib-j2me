@@ -3,8 +3,9 @@ package com.w;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.io.UnsupportedEncodingException;
 import java.util.Hashtable;
+
+import javax.microedition.midlet.MIDlet;
 
 import org.helyx.basics4me.io.BufferedReader;
 
@@ -15,7 +16,15 @@ import com.futurice.tantalum3.net.HttpGetter;
 public class AuthSession {
 
 
-    static public String urlEncode(String sUrl)   
+	
+	AuthListener authListener;
+	
+    public void setAuthListener(AuthListener authListener) {
+		this.authListener = authListener;
+	}
+
+
+	static public String urlEncode(String sUrl)   
     {  
          StringBuffer urlOK = new StringBuffer();  
          for(int i=0; i<sUrl.length(); i++)   
@@ -99,6 +108,10 @@ public class AuthSession {
 		};
 		sessionid = (String) data.get("sessionid");
 		String loginuri = (String) data.get("loginurl");
+		authListener.browserLaunchNeeded(loginuri);
+		
+		
+		
 		
 		/*
 			Uri loginuri = Uri.parse((String) data.get("loginurl"));
