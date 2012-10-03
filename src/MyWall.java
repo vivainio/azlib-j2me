@@ -1,16 +1,17 @@
-import javax.microedition.midlet.MIDlet;
 import javax.microedition.midlet.MIDletStateChangeException;
 
+import com.futurice.tantalum3.TantalumMIDlet;
+import com.w.AuthSession;
 
-public class MyWall extends MIDlet {
 
+public class MyWall extends TantalumMIDlet {
+
+	AuthSession ses;
 	public MyWall() {
+		super(2);
 		// TODO Auto-generated constructor stub
-	}
-
-	protected void destroyApp(boolean arg0) throws MIDletStateChangeException {
-		// TODO Auto-generated method stub
-
+		ses = new AuthSession();
+		ses.startAuth();
 	}
 
 	protected void pauseApp() {
