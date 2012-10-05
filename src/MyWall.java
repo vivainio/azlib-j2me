@@ -8,6 +8,7 @@ import javax.microedition.lcdui.Displayable;
 import javax.microedition.lcdui.List;
 import javax.microedition.midlet.MIDletStateChangeException;
 
+import org.json.me.JSONArray;
 import org.json.me.JSONException;
 import org.json.me.JSONObject;
 
@@ -88,6 +89,15 @@ public class MyWall extends TantalumMIDlet implements AuthListener, CommandListe
 			try {
 				json = new String(bytes, "UTF-8");
 				JSONObject o = new JSONObject(json);
+				JSONArray items = o.getJSONArray("items");
+		        int len = items.length();
+
+		        for (int i = 0; i < len; i += 1) {
+		        	String title = items.getJSONObject(i).getString("title");
+		        	mainList.append(title, null);		            
+		        }
+				
+				L.i("",o.toString(2));
 			} catch (UnsupportedEncodingException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
@@ -95,8 +105,7 @@ public class MyWall extends TantalumMIDlet implements AuthListener, CommandListe
 				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
-			
-			mainList.append("Hello", null);
+						
 			return out;
 		}
 		
