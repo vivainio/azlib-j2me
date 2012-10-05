@@ -75,6 +75,8 @@ public class AuthSession {
     	
     	sessionid = "";
     	server_url = "http://authorizr.herokuapp.com";
+    	String url = server_url + "/api/v1/create_session/a50aef9948e448e6b50903448b0bb45f/";
+    	/*
     	bld = new StringBuffer( server_url + "/api/v1/create_session/?");
     	firstArg = true;
     	setArg("auth_endpoint", "https://accounts.google.com/o/oauth2/auth");
@@ -83,10 +85,10 @@ public class AuthSession {
         setArg("redirect_uri",  server_url+"/login/google");
         setArg("scope", "https://www.googleapis.com/auth/drive");
         setArg("cred_id", "5d40ed679c394a1ba03ff6704a6c6e67" );
-        
-        System.out.println("url " + bld.toString());
+        */
+        //System.out.println("url " + bld.toString());
 
-        String url = bld.toString();
+        //String url = bld.toString();
 
         HttpGetter g = new HttpGetter(url, 0);
         byte[] bytes = (byte[]) g.doInBackground(null);
@@ -148,7 +150,7 @@ public class AuthSession {
     
     private void doFetchToken() {
     	
-    	String access_token_url = server_url+"/api/v1/fetch_access_token/?sessionid=" + sessionid;
+    	String access_token_url = server_url+"/api/v1/fetch_access_token/" + sessionid + "/";
         HttpGetter g = new HttpGetter(access_token_url, 0);
         byte[] bytes = (byte[]) g.doInBackground(null);
          
@@ -198,9 +200,6 @@ public class AuthSession {
     	ses.startAuth();
     	new InitAuthTask().execute(null, null);
     	*/
-    	
-    	
-    	    	
     }
 
     /*

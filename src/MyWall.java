@@ -1,3 +1,5 @@
+import java.io.UnsupportedEncodingException;
+
 import javax.microedition.io.ConnectionNotFoundException;
 import javax.microedition.lcdui.Command;
 import javax.microedition.lcdui.CommandListener;
@@ -6,8 +8,10 @@ import javax.microedition.lcdui.Displayable;
 import javax.microedition.lcdui.List;
 import javax.microedition.midlet.MIDletStateChangeException;
 
+import org.json.me.JSONException;
+import org.json.me.JSONObject;
+
 import com.futurice.tantalum3.TantalumMIDlet;
-import com.futurice.tantalum3.Task;
 import com.futurice.tantalum3.Worker;
 import com.futurice.tantalum3.log.L;
 import com.futurice.tantalum3.net.HttpGetter;
@@ -66,18 +70,39 @@ public class MyWall extends TantalumMIDlet implements AuthListener, CommandListe
 		
 	}
 
-	private class ListFilesTask extends HttpGetter implements Runnable {
+	private class ListFilesTask extends HttpGetter {
+		
 		public ListFilesTask(String url) {
 			// TODO Auto-generated constructor stub
 			super(url,0);
 		}
-		public void run() {
-			// run on ui thread
-			//L.i("", "in run");
-			//byte[] bytes = (byte[]) getResult();
-			//L.i("", bytes);
+
+		
+		public Object doInBackground(Object in) {
+			// TODO Auto-generated method stub
+			
+			Object out= super.doInBackground(in);
+			byte[] bytes = (byte[]) out;						
+		
+			String json;
+			try {
+				json = new String(bytes, "UTF-8");
+				JSONObject o = new JSONObject(json);
+			} catch (UnsupportedEncodingException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			} catch (JSONException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+			
+			mainList.append("Hello", null);
+			return out;
 		}
+		
+		
 	}
+	private Object store;
 	public void commandAction(Command arg0, Displayable arg1) {
 		// TODO Auto-generated method stub
 		if (arg0 == fetchTokenCommand) {
@@ -86,8 +111,10 @@ public class MyWall extends TantalumMIDlet implements AuthListener, CommandListe
 		}
 		if (arg0 == listFilesCommand) {
 			L.i("", "Listing files");
-			String url = "https://www.googleapis.com/drive/v2/files?maxResults=20&access_token="+ses.getAccessToken(); 			
-			Worker.fork(new ListFilesTask(url));
+			String url = "https://www.googleapis.com/drive/v2/files?maxResults=20&access_token="+ses.getAccessToken();
+			ListFilesTask t = new ListFilesTask(url);
+			store = t;
+			Worker.fork(t);
 			
 		}
 		
