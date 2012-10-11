@@ -4,8 +4,7 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.Hashtable;
-
-import javax.microedition.midlet.MIDlet;
+import java.util.Timer;
 
 import org.helyx.basics4me.io.BufferedReader;
 
@@ -55,7 +54,7 @@ public class AuthSession {
     public String getAccessToken() {
 		return accessToken;
 	}
-
+    
 
 	public void setArg(String key, String value) {
     	if (!firstArg) {
@@ -163,6 +162,8 @@ public class AuthSession {
 			e.printStackTrace();
 		}
         L.i("", "Access token now " + accessToken);
+        authListener.tokenReceived(accessToken);
+        
     }
     private class FetchTokenTask extends Task {
 
@@ -192,7 +193,7 @@ public class AuthSession {
     
     public void startAuth() {
     	System.out.println("Starting");
-    	Worker.fork(new StartAuthTask());
+    	Worker.fork(new StartAuthTask());    	
     	
     	
     	/*

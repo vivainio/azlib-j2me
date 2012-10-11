@@ -1,11 +1,16 @@
 import java.io.UnsupportedEncodingException;
+import java.util.Timer;
 
 import javax.microedition.io.ConnectionNotFoundException;
 import javax.microedition.lcdui.Command;
 import javax.microedition.lcdui.CommandListener;
 import javax.microedition.lcdui.Display;
 import javax.microedition.lcdui.Displayable;
+import javax.microedition.lcdui.Form;
+import javax.microedition.lcdui.Item;
+import javax.microedition.lcdui.ItemCommandListener;
 import javax.microedition.lcdui.List;
+import javax.microedition.lcdui.StringItem;
 import javax.microedition.midlet.MIDletStateChangeException;
 
 import org.json.me.JSONArray;
@@ -24,31 +29,71 @@ public class MyWall extends TantalumMIDlet implements AuthListener, CommandListe
 
     private Command exitCmd; //The exit command...
     private Display display; //The phone's display
-    private List mainList; //the main form for the application	
+    private Form mainForm; //the main form for the application	
 	 
 	private AuthSession ses;
 	
 	private Command fetchTokenCommand;
 	private Command listFilesCommand;
 	
+	
+	
+	Timer timer;
+	private Command startAuthCommand;
+	private StringItem startButton;
+	
 	public MyWall() {
 		super(2);
+		timer = new Timer();
 		// TODO Auto-generated constructor stub
 		display = Display.getDisplay(this);
 		
-		mainList = new List("GDrive", List.IMPLICIT);
+		mainForm = new Form("GDrive");
 		fetchTokenCommand = new Command("Fetch token" , Command.SCREEN, 0);
-		mainList.addCommand(fetchTokenCommand);
+		mainForm.addCommand(fetchTokenCommand);
 		listFilesCommand = new Command("List files on GDrive" , Command.SCREEN, 0);
-		mainList.addCommand(listFilesCommand);
+		mainForm.addCommand(listFilesCommand);
+		startAuthCommand = new Command("Start auth flow", Command.SCREEN,0);
+		mainForm.addCommand(startAuthCommand);
 		
-		mainList.setCommandListener(this);
+		startButton = new StringItem("Start auth flow", "Start", Item.BUTTON);
+		mainForm.append(startButton);
+		startButton.setDefaultCommand(
+		         new Command("Set", Command.ITEM, 1));
+		
+		startButton.setItemCommandListener(new ItemCommandListener() {
+			
+			public void commandAction(Command arg0, Item arg1) {
+				// TODO Auto-generated method stub
+				L.i("", "Start pressed");
+				ses.startAuth();
+				
+			}
+		});
+		
+		mainForm.setCommandListener(this);
 				
 		ses = new AuthSession();
-		ses.setAuthListener(this);
-		ses.startAuth();
+		
+		ses.setAuthListener(this);		
 	}
 
+	public void tokenReceived(String accessToken) {
+		// TODO Auto-generated method stub
+		startButton.setLabel("Ready to list files!");
+		startButton.setText("Go!");
+		startButton.setItemCommandListener(new ItemCommandListener() {
+			
+			public void commandAction(Command arg0, Item arg1) {
+				// TODO Auto-generated method stub
+				startListFiles();
+				
+			}
+		});
+		
+		
+	}
+	
 	protected void pauseApp() {
 		// TODO Auto-generated method stub
 
@@ -56,17 +101,30 @@ public class MyWall extends TantalumMIDlet implements AuthListener, CommandListe
 
 	protected void startApp() throws MIDletStateChangeException {
 		// TODO Auto-generated method stub
-		display.setCurrent(mainList);
+		display.setCurrent(mainForm);
+		L.i("", "startApp");
 
 	}
+	
 
 	public void browserLaunchNeeded(String url) {
 		try {
 			platformRequest(url);
+			L.i("", "Done calling platformrequest");
 		} catch (ConnectionNotFoundException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
+		
+		startButton.setLabel("Click here after browser is closed");
+		startButton.setText("Fetch access token");
+		startButton.setItemCommandListener( new ItemCommandListener() {
+			
+			public void commandAction(Command arg0, Item arg1) {
+				ses.fetchTokenForSession();
+				// TODO Auto-generated method stub				
+			}
+		});
 		// TODO Auto-generated method stub
 		
 	}
@@ -92,9 +150,11 @@ public class MyWall extends TantalumMIDlet implements AuthListener, CommandListe
 				JSONArray items = o.getJSONArray("items");
 		        int len = items.length();
 
+		        mainForm.delete(0);
 		        for (int i = 0; i < len; i += 1) {
 		        	String title = items.getJSONObject(i).getString("title");
-		        	mainList.append(title, null);		            
+		        	
+		        	mainForm.append(new StringItem("", title,Item.HYPERLINK));		            
 		        }
 				
 				L.i("",o.toString(2));
@@ -119,14 +179,23 @@ public class MyWall extends TantalumMIDlet implements AuthListener, CommandListe
 			ses.fetchTokenForSession();
 		}
 		if (arg0 == listFilesCommand) {
-			L.i("", "Listing files");
-			String url = "https://www.googleapis.com/drive/v2/files?maxResults=20&access_token="+ses.getAccessToken();
-			ListFilesTask t = new ListFilesTask(url);
-			store = t;
-			Worker.fork(t);
+			startListFiles();
 			
 		}
 		
+		if (arg0 == startAuthCommand) {
+			ses.startAuth();
+		}
+		
 	}
+
+	private void startListFiles() {
+		L.i("", "Listing files");
+		String url = "https://www.googleapis.com/drive/v2/files?maxResults=20&access_token="+ses.getAccessToken();
+		ListFilesTask t = new ListFilesTask(url);
+		store = t;
+		Worker.fork(t);
+	}
+
 
 }
