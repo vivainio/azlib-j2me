@@ -155,7 +155,16 @@ public class MyWall extends TantalumMIDlet implements AuthListener, CommandListe
 		        	JSONObject obj = items.getJSONObject(i);
 		        	final String title = obj.getString("title");
 		        	final String link = obj.getString("selfLink");
-		        	final StringItem it = new StringItem("", title,Item.HYPERLINK);
+		        	final String mimeType = obj.getString("mimeType");
+		        	String label;
+		        	if (mimeType.equals("application/vnd.google-apps.folder")) {
+		        		label = title+"/";		        		
+		        	} else {
+		        		label = title;
+		        	}
+		        	 
+		        	final StringItem it = new StringItem("", label,Item.HYPERLINK);
+		            		            
 		    		it.setDefaultCommand(
 		   		         new Command("Set", Command.ITEM, 1));
 		    			
@@ -168,7 +177,19 @@ public class MyWall extends TantalumMIDlet implements AuthListener, CommandListe
 							String tgt = link + "?access_token="+ses.getAccessToken();
 							L.i("Url", tgt);
 							JSONObject resp = ses.getJSON(tgt);
-							
+							String fetchUrl = null;
+							try {
+								fetchUrl = resp.getString("webContentLink");
+							} catch (JSONException e) {
+								// TODO Auto-generated catch block
+								e.printStackTrace();
+							}
+							try {
+								platformRequest(fetchUrl);
+							} catch (ConnectionNotFoundException e) {
+								// TODO Auto-generated catch block
+								e.printStackTrace();
+							}
 							
 						}
 					});

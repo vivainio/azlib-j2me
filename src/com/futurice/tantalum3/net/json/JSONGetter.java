@@ -45,6 +45,7 @@ public class JSONGetter extends HttpGetter {
         String value = null;
 		try {
 			value = new String(bytes, "UTF-8");
+			L.i("JSONGetter ", value);
 		} catch (UnsupportedEncodingException e1) {
 			// TODO Auto-generated catch block
 			e1.printStackTrace();
