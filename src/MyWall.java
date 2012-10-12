@@ -9,7 +9,6 @@ import javax.microedition.lcdui.Displayable;
 import javax.microedition.lcdui.Form;
 import javax.microedition.lcdui.Item;
 import javax.microedition.lcdui.ItemCommandListener;
-import javax.microedition.lcdui.List;
 import javax.microedition.lcdui.StringItem;
 import javax.microedition.midlet.MIDletStateChangeException;
 
@@ -21,6 +20,8 @@ import com.futurice.tantalum3.TantalumMIDlet;
 import com.futurice.tantalum3.Worker;
 import com.futurice.tantalum3.log.L;
 import com.futurice.tantalum3.net.HttpGetter;
+import com.nokia.example.utils.BackStack;
+import com.nokia.example.utils.Commands;
 import com.w.AuthListener;
 import com.w.AuthSession;
 
@@ -41,14 +42,20 @@ public class MyWall extends TantalumMIDlet implements AuthListener, CommandListe
 	Timer timer;
 	private Command startAuthCommand;
 	private StringItem startButton;
+	private BackStack backStack;
+	private Form fileForm;
 	
 	public MyWall() {
 		super(2);
+		backStack = new BackStack(this);
 		timer = new Timer();
 		// TODO Auto-generated constructor stub
 		display = Display.getDisplay(this);
 		
 		mainForm = new Form("GDrive");
+		fileForm = new Form("Details");
+		fileForm.addCommand(Commands.BACK);
+		
 		fetchTokenCommand = new Command("Fetch token" , Command.SCREEN, 0);
 		mainForm.addCommand(fetchTokenCommand);
 		listFilesCommand = new Command("List files on GDrive" , Command.SCREEN, 0);
@@ -128,6 +135,18 @@ public class MyWall extends TantalumMIDlet implements AuthListener, CommandListe
 		// TODO Auto-generated method stub
 		
 	}
+	 
+	private void populateDetails(JSONObject o) {
+		Form f = fileForm;
+	
+		try {
+			f.append(new StringItem("Name", o.getString("originalFilename")));
+		} catch (JSONException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		
+	}
 
 	private class ListFilesTask extends HttpGetter {
 		
@@ -177,6 +196,8 @@ public class MyWall extends TantalumMIDlet implements AuthListener, CommandListe
 							String tgt = link + "?access_token="+ses.getAccessToken();
 							L.i("Url", tgt);
 							JSONObject resp = ses.getJSON(tgt);
+							backStack.forward(fileForm);
+							populateDetails(resp);
 							String fetchUrl = null;
 							try {
 								fetchUrl = resp.getString("webContentLink");
@@ -184,12 +205,15 @@ public class MyWall extends TantalumMIDlet implements AuthListener, CommandListe
 								// TODO Auto-generated catch block
 								e.printStackTrace();
 							}
+							/*
 							try {
 								platformRequest(fetchUrl);
 							} catch (ConnectionNotFoundException e) {
 								// TODO Auto-generated catch block
 								e.printStackTrace();
 							}
+							*/
+							
 							
 						}
 					});
@@ -227,6 +251,10 @@ public class MyWall extends TantalumMIDlet implements AuthListener, CommandListe
 		
 		if (arg0 == startAuthCommand) {
 			ses.startAuth();
+		}
+		
+		if (arg0 == Commands.BACK) {
+			backStack.back();
 		}
 		
 	}
