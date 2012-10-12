@@ -10,6 +10,7 @@ import javax.microedition.lcdui.Form;
 import javax.microedition.lcdui.Item;
 import javax.microedition.lcdui.ItemCommandListener;
 import javax.microedition.lcdui.StringItem;
+import javax.microedition.lcdui.TextBox;
 import javax.microedition.midlet.MIDletStateChangeException;
 
 import org.json.me.JSONArray;
@@ -55,6 +56,7 @@ public class MyWall extends TantalumMIDlet implements AuthListener, CommandListe
 		mainForm = new Form("GDrive");
 		fileForm = new Form("Details");
 		fileForm.addCommand(Commands.BACK);
+		fileForm.setCommandListener(this);
 		
 		fetchTokenCommand = new Command("Fetch token" , Command.SCREEN, 0);
 		mainForm.addCommand(fetchTokenCommand);
@@ -141,10 +143,15 @@ public class MyWall extends TantalumMIDlet implements AuthListener, CommandListe
 	
 		try {
 			f.append(new StringItem("Name", o.getString("originalFilename")));
+			f.append(o.toString());
+			
 		} catch (JSONException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
+		
+		
+		
 		
 	}
 

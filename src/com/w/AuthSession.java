@@ -78,7 +78,7 @@ public class AuthSession {
     	
     	sessionid = "";
     	server_url = "http://authorizr.herokuapp.com";
-    	String url = server_url + "/api/v1/create_session/a50aef9948e448e6b50903448b0bb45f/";
+    	String url = server_url + "/api/v1/create_session/281ad6fa1f51430ea5e6d094a23c401f/";
     	/*
     	bld = new StringBuffer( server_url + "/api/v1/create_session/?");
     	firstArg = true;
@@ -93,6 +93,8 @@ public class AuthSession {
 
         //String url = bld.toString();
 
+    	JSONObject resp = getJSON(url);
+    	/*
         HttpGetter g = new HttpGetter(url, 0);
         byte[] bytes = (byte[]) g.doInBackground(null);
         ByteArrayInputStream is = new ByteArrayInputStream(bytes);
@@ -118,9 +120,17 @@ public class AuthSession {
 			System.out.println("Set " + k + " to " + v); 
 					
 		};
-		sessionid = (String) data.get("sessionid");
-		String loginuri = (String) data.get("loginurl");
-		authListener.browserLaunchNeeded(loginuri);
+		*/
+		try {
+			sessionid = resp.getString("session_id");
+			String loginuri = resp.getString("url");
+			authListener.browserLaunchNeeded(loginuri);
+		} catch (JSONException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} 
+		 
+		
 		
 		
 		
@@ -154,20 +164,17 @@ public class AuthSession {
     private void doFetchToken() {
     	
     	String access_token_url = server_url+"/api/v1/fetch_access_token/" + sessionid + "/";
-        HttpGetter g = new HttpGetter(access_token_url, 0);
-        byte[] bytes = (byte[]) g.doInBackground(null);
-         
-        ByteArrayInputStream is = new ByteArrayInputStream(bytes);
-        BufferedReader r = new BufferedReader(new InputStreamReader(is));
-        try {
-			accessToken = r.readLine();
-		} catch (IOException e) {
+    	JSONObject resp = getJSON(access_token_url);
+    	
+    	try {
+			accessToken = resp.getString("access_token");
+			authListener.tokenReceived(accessToken);
+		} catch (JSONException e1) {
 			// TODO Auto-generated catch block
-			e.printStackTrace();
+			e1.printStackTrace();
 		}
         L.i("", "Access token now " + accessToken);
-        authListener.tokenReceived(accessToken);
-        
+                
     }
     private class FetchTokenTask extends Task {
 
