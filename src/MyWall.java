@@ -152,9 +152,30 @@ public class MyWall extends TantalumMIDlet implements AuthListener, CommandListe
 
 		        mainForm.delete(0);
 		        for (int i = 0; i < len; i += 1) {
-		        	String title = items.getJSONObject(i).getString("title");
+		        	JSONObject obj = items.getJSONObject(i);
+		        	final String title = obj.getString("title");
+		        	final String link = obj.getString("selfLink");
+		        	final StringItem it = new StringItem("", title,Item.HYPERLINK);
+		    		it.setDefaultCommand(
+		   		         new Command("Set", Command.ITEM, 1));
+		    			
+		    		
+		    		it.setItemCommandListener(new ItemCommandListener() {
+						
+						public void commandAction(Command arg0, Item arg1) {
+							// TODO Auto-generated method stub
+							L.i("", "Will fetch " + title + " " + link);
+							String tgt = link + "?access_token="+ses.getAccessToken();
+							L.i("Url", tgt);
+							JSONObject resp = ses.getJSON(tgt);
+							
+							
+						}
+					});
+		    		
 		        	
-		        	mainForm.append(new StringItem("", title,Item.HYPERLINK));		            
+		        	
+		        	mainForm.append(it);		            
 		        }
 				
 				L.i("",o.toString(2));

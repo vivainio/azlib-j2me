@@ -3,15 +3,19 @@ package com.w;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.io.UnsupportedEncodingException;
 import java.util.Hashtable;
-import java.util.Timer;
 
 import org.helyx.basics4me.io.BufferedReader;
+import org.json.me.JSONException;
+import org.json.me.JSONObject;
 
 import com.futurice.tantalum3.Task;
 import com.futurice.tantalum3.Worker;
 import com.futurice.tantalum3.log.L;
 import com.futurice.tantalum3.net.HttpGetter;
+import com.futurice.tantalum3.net.json.JSONGetter;
+import com.futurice.tantalum3.net.json.JSONModel;
 
 public class AuthSession {
 
@@ -189,6 +193,14 @@ public class AuthSession {
 			return null;
 		}
     	
+    }
+
+    
+    public JSONObject getJSON(String url) {
+    	JSONModel mdl = new JSONModel();
+    	JSONGetter g = new JSONGetter(url, mdl, 0);
+    	g.doInBackground(null);
+    	return mdl.jsonObject;
     }
     
     public void startAuth() {

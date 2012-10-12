@@ -32,8 +32,9 @@ import org.json.me.JSONObject;
 public class JSONModel {
     private static final Object MUTEX = new Object();
 
-    private JSONObject jsonObject = new JSONObject();
+    public JSONObject jsonObject = new JSONObject();
 
+    
     /**
      * Null constructor is an empty placeholder
      */

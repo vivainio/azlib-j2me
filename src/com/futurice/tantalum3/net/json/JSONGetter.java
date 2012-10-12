@@ -22,6 +22,8 @@
  */
 package com.futurice.tantalum3.net.json;
 
+import java.io.UnsupportedEncodingException;
+
 import com.futurice.tantalum3.log.L;
 import com.futurice.tantalum3.net.HttpGetter;
 
@@ -38,8 +40,16 @@ public class JSONGetter extends HttpGetter {
         this.jsonModel = jsonModel;
     }
 
-    public Object doInBackground(final Object in) {
-        String value = ((byte[]) super.doInBackground(in)).toString().trim();
+    public Object doInBackground(final Object in) {    	 
+        byte[] bytes = (byte[]) super.doInBackground(in);
+        String value = null;
+		try {
+			value = new String(bytes, "UTF-8");
+		} catch (UnsupportedEncodingException e1) {
+			// TODO Auto-generated catch block
+			e1.printStackTrace();
+			return null;
+		}
 
         try {
             if (value.startsWith("[")) {
