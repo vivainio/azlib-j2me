@@ -140,6 +140,7 @@ public class MyWall extends TantalumMIDlet implements AuthListener, CommandListe
 	 
 	private void populateDetails(JSONObject o) {
 		Form f = fileForm;
+		f.deleteAll();
 	
 		try {
 			f.append(new StringItem("Name", o.getString("originalFilename")));

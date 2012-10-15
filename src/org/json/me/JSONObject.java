@@ -535,6 +535,11 @@ public class JSONObject {
         return get(key).toString();
     }
 
+    
+     
+
+     
+
     /**
      * Determine if the JSONObject contains a specific key.
      * @param key   A key string.
@@ -820,6 +825,17 @@ public class JSONObject {
         return optString(key, "");
     }
 
+    public String s(String key)  {
+    	return optString(key);
+    }
+    
+    public JSONArray a(String key) {
+    	return optJSONArray(key);
+    }
+
+    public JSONObject o(String key) {
+    	return optJSONObject(key);
+    }
 
     /**
      * Get an optional string associated with a key.
