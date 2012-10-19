@@ -21,6 +21,7 @@ public abstract class Task implements Workable {
     public static final int EXCEPTION = 32;
     private Object result = null; // Always access within a synchronized block
     protected int status = UI_RUN_FINISHED; // Always access within a synchronized block
+	private Workable onFinishHandler;
 
     public Task() {
     }
@@ -219,6 +220,10 @@ public abstract class Task implements Workable {
                 setStatus(EXEC_FINISHED);
             }
             setStatus(EXEC_FINISHED);
+            
+            if (onFinishHandler != null) {
+            	onFinishHandler.exec(r);
+            }
             if (this instanceof Runnable) {
                 PlatformUtils.runOnUiThread(new Runnable() {
                     public void run() {
@@ -293,8 +298,16 @@ public abstract class Task implements Workable {
      */
     public void onCancelled() {
     }
-
+    
     public String toString() {
         return super.toString() + " status=" + status + " result=" + result;
     }
+    
+    public void finished(Workable w) {
+    	onFinishHandler = w;
+    }
+    
+    
+    
+    
 }

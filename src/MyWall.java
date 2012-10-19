@@ -1,5 +1,8 @@
 import java.io.UnsupportedEncodingException;
+import java.util.Enumeration;
+import java.util.Hashtable;
 import java.util.Timer;
+import java.util.Vector;
 
 import javax.microedition.io.ConnectionNotFoundException;
 import javax.microedition.lcdui.Command;
@@ -9,8 +12,8 @@ import javax.microedition.lcdui.Displayable;
 import javax.microedition.lcdui.Form;
 import javax.microedition.lcdui.Item;
 import javax.microedition.lcdui.ItemCommandListener;
+import javax.microedition.lcdui.List;
 import javax.microedition.lcdui.StringItem;
-import javax.microedition.lcdui.TextBox;
 import javax.microedition.midlet.MIDletStateChangeException;
 
 import org.json.me.JSONArray;
@@ -18,6 +21,7 @@ import org.json.me.JSONException;
 import org.json.me.JSONObject;
 
 import com.futurice.tantalum3.TantalumMIDlet;
+import com.futurice.tantalum3.Workable;
 import com.futurice.tantalum3.Worker;
 import com.futurice.tantalum3.log.L;
 import com.futurice.tantalum3.net.HttpGetter;
@@ -46,12 +50,19 @@ public class MyWall extends TantalumMIDlet implements AuthListener, CommandListe
 	private BackStack backStack;
 	private Form fileForm;
 	
+	private Hashtable itemsHash;
+	private Hashtable children;
+	
+	
 	public MyWall() {
 		super(2);
 		backStack = new BackStack(this);
 		timer = new Timer();
 		// TODO Auto-generated constructor stub
 		display = Display.getDisplay(this);
+		
+		itemsHash = new Hashtable();		
+		children = new Hashtable();
 		
 		mainForm = new Form("GDrive");
 		fileForm = new Form("Details");
@@ -89,16 +100,6 @@ public class MyWall extends TantalumMIDlet implements AuthListener, CommandListe
 
 	public void tokenReceived(String accessToken) {
 		// TODO Auto-generated method stub
-		startButton.setLabel("Ready to list files!");
-		startButton.setText("Go!");
-		startButton.setItemCommandListener(new ItemCommandListener() {
-			
-			public void commandAction(Command arg0, Item arg1) {
-				// TODO Auto-generated method stub
-				startListFiles();
-				
-			}
-		});
 		
 		
 	}
@@ -180,9 +181,33 @@ public class MyWall extends TantalumMIDlet implements AuthListener, CommandListe
 		        mainForm.delete(0);
 		        for (int i = 0; i < len; i += 1) {
 		        	JSONObject obj = items.getJSONObject(i);
-		        	final String title = obj.getString("title");
-		        	final String link = obj.getString("selfLink");
-		        	final String mimeType = obj.getString("mimeType");
+		        	//L.i("Handling", obj.toString(2));		        	
+		        	final String idd = obj.s("id");
+		        	
+		        	itemsHash.put(idd, obj);
+		        	final String title = obj.s("title");
+		        	final String link = obj.s("selfLink");
+		        	final String mimeType = obj.s("mimeType");
+		        	
+		        	JSONArray par = obj.a("parents");
+		        	String parent;
+		        	if (par.length() > 0) {
+		        		parent = par.o(0).s("id");
+		        	} else {
+		        		parent = "";		        		
+		        	}
+		        	L.i("", "Handling" + idd + ": " + title + " par " + parent);
+		        	Vector clist;
+		        	if (children.containsKey(parent)) {
+		        		clist = (Vector) children.get(parent);
+		        		
+		        	} else {
+		        		L.i("", "New vect for " + parent);
+		        		clist = new Vector();
+		        		children.put(parent, clist);
+		        	}
+		        	clist.addElement(idd);
+		        	
 		        	String label;
 		        	if (mimeType.equals("application/vnd.google-apps.folder")) {
 		        		label = title+"/";		        		
@@ -228,9 +253,11 @@ public class MyWall extends TantalumMIDlet implements AuthListener, CommandListe
 		    		
 		        	
 		        	
-		        	mainForm.append(it);		            
+		        	//mainForm.append(it);		            
 		        }
 				
+		        
+		        //listFolders("");
 				L.i("",o.toString(2));
 			} catch (UnsupportedEncodingException e) {
 				// TODO Auto-generated catch block
@@ -266,14 +293,90 @@ public class MyWall extends TantalumMIDlet implements AuthListener, CommandListe
 		}
 		
 	}
+	
+	private void listFolders(String parent) {
+		Enumeration it = children.keys();
+		
+		L.i("", "Listinf folders");
+		while (it.hasMoreElements()) {
+			String k = (String) it.nextElement();
+			
+			L.i("k", k);
+			Vector v = (Vector) children.get(k);
+			if (v == null) {
+				L.i("notfound", k);
+				continue;
+			}
+			L.i("", "Found");
+			
+			String title;
+			JSONObject ob = (JSONObject) itemsHash.get(k);
+			if (ob == null) {
+				title = k;
+				L.i("notfound ob", k);
+			} else {
+				title = ob.s("title");
+			}
+			
+			int size = 0;
+			if (v != null) {
+				size = v.size();
+			}
+			
+			
+			StringItem item = new StringItem("", title, StringItem.HYPERLINK);
 
+    		item.setDefaultCommand(
+	   		         new Command("Set", Command.ITEM, 1));
+    		
+    		//item.setItemCommandListener(arg0)
+//			
+			mainForm.append(item);
+			
+			
+			//mainForm.append(title + ": " + size + "\n"); 
+			
+		}	
+	}
+	
+	private void startQuery(String query, Workable resultHnd) {
+		String qe = ses.urlEncode(query);
+		
+		String url = "https://www.googleapis.com/drive/v2/files?" +
+				"maxResults=50" + 
+				"&q=" + qe + 
+				"&access_token="+ses.getAccessToken();
+		ListFilesTask t = new ListFilesTask(url);		
+		t.finished(resultHnd);
+		Worker.fork(t);
+		
+	}
+	
 	private void startListFiles() {
 		L.i("", "Listing files");
-		String url = "https://www.googleapis.com/drive/v2/files?maxResults=20&access_token="+ses.getAccessToken();
-		ListFilesTask t = new ListFilesTask(url);
-		store = t;
-		Worker.fork(t);
+		startQuery("mimeType = 'application/vnd.google-apps.folder'", 
+				new Workable() {
+					
+					public Object exec(Object in) {
+						// TODO Auto-generated method stub
+						listFolders(null);
+						return null;
+					}
+				});
 	}
 
-
+	public void tokenReceived(String accessToken, String refreshToken) {
+		// TODO Auto-generated method stub
+		startButton.setLabel("Ready to list files!");
+		startButton.setText("Go!");
+		startButton.setItemCommandListener(new ItemCommandListener() {
+			
+			public void commandAction(Command arg0, Item arg1) {
+				// TODO Auto-generated method stub
+				startListFiles();
+				
+			}
+		});
+		
+	}
 }

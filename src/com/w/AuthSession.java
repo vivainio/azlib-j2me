@@ -1,19 +1,11 @@
 package com.w;
 
-import java.io.ByteArrayInputStream;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.UnsupportedEncodingException;
-import java.util.Hashtable;
-
-import org.helyx.basics4me.io.BufferedReader;
 import org.json.me.JSONException;
 import org.json.me.JSONObject;
 
 import com.futurice.tantalum3.Task;
 import com.futurice.tantalum3.Worker;
 import com.futurice.tantalum3.log.L;
-import com.futurice.tantalum3.net.HttpGetter;
 import com.futurice.tantalum3.net.json.JSONGetter;
 import com.futurice.tantalum3.net.json.JSONModel;
 
@@ -54,6 +46,7 @@ public class AuthSession {
     private String server_url;
     
     private String accessToken;
+	private String refreshToken;
     
     public String getAccessToken() {
 		return accessToken;
@@ -78,7 +71,9 @@ public class AuthSession {
     	
     	sessionid = "";
     	server_url = "http://authorizr.herokuapp.com";
-    	String url = server_url + "/api/v1/create_session/281ad6fa1f51430ea5e6d094a23c401f/";
+    	String url = server_url + "/api/v1/create_session/281ad6fa1f51430ea5e6d094a23c401f/?" +  
+    			"access_type=offline&approval_prompt=force";
+    			;
     	/*
     	bld = new StringBuffer( server_url + "/api/v1/create_session/?");
     	firstArg = true;
@@ -168,7 +163,9 @@ public class AuthSession {
     	
     	try {
 			accessToken = resp.getString("access_token");
-			authListener.tokenReceived(accessToken);
+			refreshToken = resp.s("refresh_token");
+			authListener.tokenReceived(accessToken, refreshToken);
+			
 		} catch (JSONException e1) {
 			// TODO Auto-generated catch block
 			e1.printStackTrace();

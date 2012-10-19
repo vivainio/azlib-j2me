@@ -275,6 +275,10 @@ public class JSONArray {
         throw new JSONException("JSONArray[" + index +
             "] is not a JSONObject.");
     }
+    
+    public JSONObject o(int index) throws JSONException {
+    	return getJSONObject(index);
+    }
 
 
 //#if CLDC!="1.0"
