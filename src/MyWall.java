@@ -94,8 +94,11 @@ public class MyWall extends TantalumMIDlet implements AuthListener, CommandListe
 		mainForm.setCommandListener(this);
 				
 		ses = new AuthSession();
-		
-		ses.setAuthListener(this);		
+		ses.setServerUrl("http://authorizr.herokuapp.com");
+		ses.setCredId("281ad6fa1f51430ea5e6d094a23c401f");
+		ses.setAuthListener(this);
+		ses.restoreStateFromDisk();
+		ses.finalizeAuthIfNeeded(null);
 	}
 
 	public void tokenReceived(String accessToken) {
@@ -131,7 +134,7 @@ public class MyWall extends TantalumMIDlet implements AuthListener, CommandListe
 		startButton.setItemCommandListener( new ItemCommandListener() {
 			
 			public void commandAction(Command arg0, Item arg1) {
-				ses.fetchTokenForSession();
+				ses.fetchTokenForSession(null);
 				// TODO Auto-generated method stub				
 			}
 		});
@@ -277,7 +280,7 @@ public class MyWall extends TantalumMIDlet implements AuthListener, CommandListe
 		// TODO Auto-generated method stub
 		if (arg0 == fetchTokenCommand) {
 			L.i("", "Fetching token");
-			ses.fetchTokenForSession();
+			ses.fetchTokenForSession(null);
 		}
 		if (arg0 == listFilesCommand) {
 			startListFiles();
@@ -294,12 +297,19 @@ public class MyWall extends TantalumMIDlet implements AuthListener, CommandListe
 		
 	}
 	
+	
 	private void listFolders(String parent) {
-		Enumeration it = children.keys();
+		Enumeration it;
+		if (parent == null) {
+			it = children.keys();
+		} else {
+			Vector chi = (Vector) children.get(parent);
+			it = chi.elements();
+		}
 		
 		L.i("", "Listinf folders");
 		while (it.hasMoreElements()) {
-			String k = (String) it.nextElement();
+			final String k = (String) it.nextElement();
 			
 			L.i("k", k);
 			Vector v = (Vector) children.get(k);
@@ -329,7 +339,15 @@ public class MyWall extends TantalumMIDlet implements AuthListener, CommandListe
     		item.setDefaultCommand(
 	   		         new Command("Set", Command.ITEM, 1));
     		
-    		//item.setItemCommandListener(arg0)
+    		item.setItemCommandListener( new ItemCommandListener() {
+				
+				public void commandAction(Command arg0, Item arg1) {
+
+					handleFolderSelect(k);
+					// TODO Auto-generated method stub
+					
+				}
+			});
 //			
 			mainForm.append(item);
 			
@@ -339,11 +357,24 @@ public class MyWall extends TantalumMIDlet implements AuthListener, CommandListe
 		}	
 	}
 	
+	protected void handleFolderSelect(String k) {
+		// TODO Auto-generated method stub
+		startQuery("parent = " + k, new Workable() {
+			
+			public Object exec(Object in) {
+				// TODO Auto-generated method stub
+				//listFolders(k);
+				return null;
+			}
+		});
+		
+	}
+
 	private void startQuery(String query, Workable resultHnd) {
 		String qe = ses.urlEncode(query);
 		
 		String url = "https://www.googleapis.com/drive/v2/files?" +
-				"maxResults=50" + 
+				"maxResults=20" + 
 				"&q=" + qe + 
 				"&access_token="+ses.getAccessToken();
 		ListFilesTask t = new ListFilesTask(url);		

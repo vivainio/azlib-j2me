@@ -1,13 +1,22 @@
 package com.w;
 
+import java.io.UnsupportedEncodingException;
+
+import javax.microedition.rms.RecordStore;
+import javax.microedition.rms.RecordStoreException;
+import javax.microedition.rms.RecordStoreFullException;
+
 import org.json.me.JSONException;
 import org.json.me.JSONObject;
 
 import com.futurice.tantalum3.Task;
+import com.futurice.tantalum3.Workable;
 import com.futurice.tantalum3.Worker;
 import com.futurice.tantalum3.log.L;
 import com.futurice.tantalum3.net.json.JSONGetter;
 import com.futurice.tantalum3.net.json.JSONModel;
+import com.futurice.tantalum3.rms.RMSUtils;
+
 
 public class AuthSession {
 
@@ -43,12 +52,38 @@ public class AuthSession {
     private StringBuffer bld;
     private boolean firstArg = false;
     private String sessionid;
-    private String server_url;
+    private String serverUrl;
     
+    public String getServerUrl() {
+		return serverUrl;
+	}
+
+
+	public void setServerUrl(String serverUrl) {
+		this.serverUrl = serverUrl;
+	}
+
+	private String currentState;
     private String accessToken;
 	private String refreshToken;
+	private String credId;
     
-    public String getAccessToken() {
+    public String getCredId() {
+		return credId;
+	}
+
+
+	public void setCredId(String credId) {
+		this.credId = credId;
+	}
+
+
+	public String getAccessToken() {
+    	if (currentState != "access_token_ok") {
+    		L.i("", "Access token not yet available, state = " + currentState);
+    		return null;
+    	}
+    	
 		return accessToken;
 	}
     
@@ -67,13 +102,94 @@ public class AuthSession {
     }
     
 
+	
+	private JSONObject getStateJson() {
+		JSONObject o = new JSONObject();
+		try {
+			o.put("state", currentState);
+			o.put("access_token", accessToken);
+			o.put("refresh_token", refreshToken);
+			o.put("session_id", sessionid);
+		} catch (JSONException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+			return null;
+		}
+		
+		return o;
+		
+		
+		
+		
+	}
+	public void storeStateToDisk() {
+		byte[] state;
+		try {
+			JSONObject stateJson = getStateJson();
+			state = stateJson.toString().getBytes("UTF-8");
+			L.i("Storing state", stateJson.toString(2));
+			RMSUtils.write("authorizr_state", stateJson.toString().getBytes("UTF-8"));
+		} catch (UnsupportedEncodingException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+			return;
+		} catch (RecordStoreFullException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (JSONException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} 
+	}
+
+	public void restoreStateFromDisk() {
+		byte[] state;
+		state = RMSUtils.read("authorizr_state");
+		if (state == null) {			
+			currentState = "uninitialized";
+			return;
+		}
+		try {
+			JSONObject o = new JSONObject(new String(state, "UTF-8"));
+			L.i("Restored stata", o.toString(2));
+			accessToken = o.s("access_token");
+			refreshToken = o.s("refresh_token");
+			currentState = o.s("state");
+			sessionid = o.s("session_id");
+					
+		} catch (UnsupportedEncodingException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (JSONException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+	}
+	
+	public void finalizeAuthIfNeeded(Workable done) {
+		if (getAccessToken() != null) {
+			return;
+		}
+		if (currentState.equals("browser_launched")) {
+			fetchTokenForSession(done);
+		} else {
+			L.i("AuthSession" , "Can't finalize, unknown state: " + currentState);
+		}
+		
+		
+	}
+	
+
+	
     private void initAuth() {
     	
     	sessionid = "";
-    	server_url = "http://authorizr.herokuapp.com";
-    	String url = server_url + "/api/v1/create_session/281ad6fa1f51430ea5e6d094a23c401f/?" +  
-    			"access_type=offline&approval_prompt=force";
-    			;
+    	serverUrl = "http://authorizr.herokuapp.com";    	
+    	String url = serverUrl + "/api/v1/create_session/" + credId + "?" + 
+    			"access_type=offline";
+    			//"access_type=offline&approval_prompt=force";
+    			
+    			
     	/*
     	bld = new StringBuffer( server_url + "/api/v1/create_session/?");
     	firstArg = true;
@@ -88,6 +204,7 @@ public class AuthSession {
 
         //String url = bld.toString();
 
+    	currentState = "create_session";
     	JSONObject resp = getJSON(url);
     	/*
         HttpGetter g = new HttpGetter(url, 0);
@@ -119,7 +236,10 @@ public class AuthSession {
 		try {
 			sessionid = resp.getString("session_id");
 			String loginuri = resp.getString("url");
+			currentState = "browser_launched";
+			storeStateToDisk();
 			authListener.browserLaunchNeeded(loginuri);
+			
 		} catch (JSONException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -158,7 +278,7 @@ public class AuthSession {
     
     private void doFetchToken() {
     	
-    	String access_token_url = server_url+"/api/v1/fetch_access_token/" + sessionid + "/";
+    	String access_token_url = serverUrl+"/api/v1/fetch_access_token/" + sessionid + "/";
     	JSONObject resp = getJSON(access_token_url);
     	
     	try {
@@ -170,6 +290,8 @@ public class AuthSession {
 			// TODO Auto-generated catch block
 			e1.printStackTrace();
 		}
+    	currentState = "access_token_ok";
+    	storeStateToDisk();
         L.i("", "Access token now " + accessToken);
                 
     }
@@ -184,8 +306,13 @@ public class AuthSession {
     	
     }
     
-    public void fetchTokenForSession() {
-    	Worker.fork(new FetchTokenTask());    	
+    public void fetchTokenForSession(Workable done) {
+    	FetchTokenTask task = new FetchTokenTask();
+    	if (done != null) {
+    		task.finished(done);
+    	}
+    		
+    	Worker.fork(task);    	
     	
     	
     }
