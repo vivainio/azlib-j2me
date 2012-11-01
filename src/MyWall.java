@@ -337,6 +337,7 @@ public class MyWall extends TantalumMIDlet implements AuthListener, CommandListe
 	
 	private void listFiles(String parent, Form currentForm) {
 		Enumeration it;
+		currentForm.deleteAll();
 		if (parent == null) {
 			it = itemsHash.keys();
 		} else {
@@ -448,7 +449,7 @@ public class MyWall extends TantalumMIDlet implements AuthListener, CommandListe
 	private void startListFiles() {
 		L.i("", "Listing files");
 		 // "mimeType = 'application/vnd.google-apps.folder'",
-		startQuery("'0ADt3qZtXFFPGUk9PVA' in parents",  
+		startQuery("'root' in parents",  
 				
 				new Workable() {
 					
