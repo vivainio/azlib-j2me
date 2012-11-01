@@ -195,6 +195,7 @@ public class MyWall extends TantalumMIDlet implements AuthListener, CommandListe
 		return f;
 		
 	}
+	/*
 	private class ListFilesTask extends HttpGetter {
 		
 		public ListFilesTask(String url) {
@@ -203,110 +204,24 @@ public class MyWall extends TantalumMIDlet implements AuthListener, CommandListe
 		}
 
 		
-		public Object doInBackground(Object in) {
+		public Object doInBackground(Object in) throws UnsupportedEncodingException {
 			// TODO Auto-generated method stub
 			
 			Object out= super.doInBackground(in);
-			byte[] bytes = (byte[]) out;						
-		
+			byte[] bytes = (byte[]) out;
 			String json;
-			try {
-				json = new String(bytes, "UTF-8");
-				JSONObject o = new JSONObject(json);
-				JSONArray items = o.getJSONArray("items");
-		        int len = items.length();
-
-		        //mainForm.delete(0);
-		        for (int i = 0; i < len; i += 1) {
-		        	JSONObject obj = items.getJSONObject(i);
-		        	//L.i("Handling", obj.toString(2));		        	
-		        	final String idd = obj.s("id");
-		        	
-		        	itemsHash.put(idd, obj);
-		        	final String title = obj.s("title");
-		        	final String link = obj.s("selfLink");
-		        	final String mimeType = obj.s("mimeType");
-		        	
-		        	JSONArray par = obj.a("parents");
-		        	String parent;
-		        	if (par.length() > 0) {
-		        		parent = par.o(0).s("id");
-		        	} else {
-		        		parent = "";		        		
-		        	}
-		        	L.i("", "Handling" + idd + ": " + title + " par " + parent);
-		        	Vector clist;
-		        	if (children.containsKey(parent)) {
-		        		clist = (Vector) children.get(parent);
-		        		
-		        	} else {
-		        		L.i("", "New vect for " + parent);
-		        		clist = new Vector();
-		        		children.put(parent, clist);
-		        	}
-		        	clist.addElement(idd);
-		        	
-		        	/*
-		        	String label;
-		        	if (mimeType.equals("application/vnd.google-apps.folder")) {
-		        		label = title+"/";		        		
-		        	} else {
-		        		label = title;
-		        	}
-		        	*/
-
-		        	/*
-		        	final StringItem it = new StringItem("", label,Item.HYPERLINK);
-		            		            
-		    		it.setDefaultCommand(
-		   		         new Command("Set", Command.ITEM, 1));
-		    		*/
-		    		
-		        	/*
-		    		it.setItemCommandListener(new ItemCommandListener() {
-						
-						public void commandAction(Command arg0, Item arg1) {
-							// TODO Auto-generated method stub
-							L.i("", "Will fetch " + title + " " + link);
-							String tgt = link + "?access_token="+ses.getAccessToken();
-							L.i("Url", tgt);
-							JSONObject resp = ses.getJSON(tgt);
-							backStack.forward(fileForm);
-							populateDetails(resp);
-							String fetchUrl = null;
-							try {
-								fetchUrl = resp.getString("webContentLink");
-							} catch (JSONException e) {
-								// TODO Auto-generated catch block
-								e.printStackTrace();
-							}							
-							
-						}
-					});
-					*/
-		    		
-		        	
-		        	
-		        	//mainForm.append(it);		            
-		        }
-				
-		        
-		        //listFolders("");
-				L.i("",o.toString(2));
-			} catch (UnsupportedEncodingException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			} catch (JSONException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}
+			json = new String(bytes, "UTF-8");
+			JSONObject o = new JSONObject(json);
+		
+			
+			parseFileList(o);
 						
 			return out;
 		}
 		
 		
 	}
-	private Object store;
+	*/
 	public void commandAction(Command arg0, Displayable arg1) {
 		// TODO Auto-generated method stub
 		if (arg0 == fetchTokenCommand) {
@@ -335,6 +250,7 @@ public class MyWall extends TantalumMIDlet implements AuthListener, CommandListe
 	
 	
 	
+	
 	private void listFiles(String parent, Form currentForm) {
 		Enumeration it;
 		currentForm.deleteAll();
@@ -342,6 +258,11 @@ public class MyWall extends TantalumMIDlet implements AuthListener, CommandListe
 			it = itemsHash.keys();
 		} else {
 			Vector chi = (Vector) children.get(parent);
+			if (chi == null) {
+				L.i("", "Empty folder");
+				currentForm.append("Empty folder");
+				return;
+			}
 			L.i("", "Item " + parent + " has childcount = " + chi.size());
 			it = chi.elements();
 		}
@@ -349,6 +270,7 @@ public class MyWall extends TantalumMIDlet implements AuthListener, CommandListe
 		
 		while (it.hasMoreElements()) {
 			final String k = (String) it.nextElement();
+	
 			
 			L.i("current k=", k);
 			Vector v = (Vector) children.get(k);
@@ -357,8 +279,14 @@ public class MyWall extends TantalumMIDlet implements AuthListener, CommandListe
 				//continue;
 			}
 			
+			
+			
 			String title;
 			final JSONObject ob = (JSONObject) itemsHash.get(k);
+			
+			if (hasLabel(ob, "trashed")) {
+				continue;
+			}
 			if (ob == null) {
 				title = k;
 				L.i("","notfound item k="+ k);
@@ -367,6 +295,10 @@ public class MyWall extends TantalumMIDlet implements AuthListener, CommandListe
 				title = ob.s("title");
 			}
 			
+			final boolean isFolder = ob.s("mimeType").equals("application/vnd.google-apps.folder");
+			if (isFolder) {
+				title = title + "/";
+			}
 			int size = 0;
 			if (v != null) {
 				size = v.size();
@@ -383,7 +315,8 @@ public class MyWall extends TantalumMIDlet implements AuthListener, CommandListe
 				
 				public void commandAction(Command arg0, Item arg1) {
 
-					if (ob.s("mimeType").equals("application/vnd.google-apps.folder")) {
+					
+					if (isFolder) {
 					 
 						handleFolderSelect(k);
 					} else {
@@ -397,12 +330,31 @@ public class MyWall extends TantalumMIDlet implements AuthListener, CommandListe
 //			
 			currentForm.append(item);
 			
-			
 			//mainForm.append(title + ": " + size + "\n"); 
 			
 		}	
+		try {
+			getItem(parent).put("__fetched", true);
+		} catch (JSONException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+
 	}
 	
+	private boolean hasLabel(JSONObject ob, String string) {
+		// TODO Auto-generated method stub
+		try {
+			if (ob.o("labels").getBoolean(string)) {
+				return true;
+			}
+		} catch (JSONException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		return false;
+	}
+
 	private JSONObject getItem(String id ) {
 		return (JSONObject) itemsHash.get(id);
 	}
@@ -419,6 +371,12 @@ public class MyWall extends TantalumMIDlet implements AuthListener, CommandListe
 	protected void handleFolderSelect(final String k) {
 		// TODO Auto-generated method stub
 		final Form f = pushPage("Folder");
+		if (getItem(k).optBoolean("__fetched")) {
+			L.i("", "Already fetched " + k);			
+			listFiles(k, f);
+			return;
+		}		
+		f.append("Fetching files...");
 		startQuery("'" + k + "' in parents", new Workable() {
 			
 			public Object exec(Object in) {
@@ -432,17 +390,28 @@ public class MyWall extends TantalumMIDlet implements AuthListener, CommandListe
 		
 	}
 
-	private void startQuery(String query, Workable resultHnd) {
+	private void startQuery(String query, final Workable resultHnd) {
 		L.i("startQuery", query);
-		String qe = ses.urlEncode(query);
+		String qe = AuthSession.urlEncode(query);
 		
 		String url = "https://www.googleapis.com/drive/v2/files?" +
-				"maxResults=20" + 
+				"maxResults=30" + 
 				"&q=" + qe + 
 				"&access_token="+ses.getAccessToken();
-		ListFilesTask t = new ListFilesTask(url);		
-		t.finished(resultHnd);
-		Worker.fork(t);
+		
+		
+//		ListFilesTask t = new ListFilesTask(url);
+		
+		ses.getJSONAsync(url, new Workable() {
+			public Object exec(Object in) {
+				// TODO Auto-generated method stub
+				final JSONObject res = (JSONObject) in;
+				parseFileList(res);
+				resultHnd.exec(res);
+				return null;
+			}
+		});
+						
 		
 	}
 	
@@ -474,5 +443,93 @@ public class MyWall extends TantalumMIDlet implements AuthListener, CommandListe
 			}
 		});
 		
+	}
+
+	private void parseFileList(JSONObject o) {
+		try {
+			JSONArray items = o.getJSONArray("items");
+		    int len = items.length();
+
+		    //mainForm.delete(0);
+		    for (int i = 0; i < len; i += 1) {
+		    	JSONObject obj = items.getJSONObject(i);
+		    	//L.i("Handling", obj.toString(2));		        	
+		    	final String idd = obj.s("id");
+		    	
+		    	itemsHash.put(idd, obj);
+		    	final String title = obj.s("title");
+		    	final String link = obj.s("selfLink");
+		    	final String mimeType = obj.s("mimeType");
+		    	
+		    	JSONArray par = obj.a("parents");
+		    	String parent;
+		    	if (par.length() > 0) {
+		    		parent = par.o(0).s("id");
+		    	} else {
+		    		parent = "";		        		
+		    	}
+		    	L.i("", "Handling" + idd + ": " + title + " par " + parent);
+		    	Vector clist;
+		    	if (children.containsKey(parent)) {
+		    		clist = (Vector) children.get(parent);
+		    		
+		    	} else {
+		    		L.i("", "New vect for " + parent);
+		    		clist = new Vector();
+		    		children.put(parent, clist);
+		    	}
+		    	clist.addElement(idd);
+		    	
+		    	/*
+		    	String label;
+		    	if (mimeType.equals("application/vnd.google-apps.folder")) {
+		    		label = title+"/";		        		
+		    	} else {
+		    		label = title;
+		    	}
+		    	*/
+
+		    	/*
+		    	final StringItem it = new StringItem("", label,Item.HYPERLINK);
+		        		            
+				it.setDefaultCommand(
+			         new Command("Set", Command.ITEM, 1));
+				*/
+				
+		    	/*
+				it.setItemCommandListener(new ItemCommandListener() {
+					
+					public void commandAction(Command arg0, Item arg1) {
+						// TODO Auto-generated method stub
+						L.i("", "Will fetch " + title + " " + link);
+						String tgt = link + "?access_token="+ses.getAccessToken();
+						L.i("Url", tgt);
+						JSONObject resp = ses.getJSON(tgt);
+						backStack.forward(fileForm);
+						populateDetails(resp);
+						String fetchUrl = null;
+						try {
+							fetchUrl = resp.getString("webContentLink");
+						} catch (JSONException e) {
+							// TODO Auto-generated catch block
+							e.printStackTrace();
+						}							
+						
+					}
+				});
+				*/
+				
+		    	
+		    	
+		    	//mainForm.append(it);		            
+		    }
+			
+		    
+		    //listFolders("");
+			L.i("",o.toString(2));
+		} catch (JSONException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 	}
 }

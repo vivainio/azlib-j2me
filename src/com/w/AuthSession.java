@@ -341,6 +341,22 @@ public class AuthSession {
     	return mdl.jsonObject;
     }
     
+    public void getJSONAsync(String url, final Workable done) {
+    	JSONModel mdl = new JSONModel();
+		JSONGetter g = new JSONGetter(url, mdl, 0);
+		
+		g.finished(new Workable() {
+			
+			public Object exec(Object in) {
+				// TODO Auto-generated method stub
+				done.exec(in); 
+				return null;
+			}
+		}); 
+		Worker.fork(g);
+    }
+    
+    
     public void startAuth() {
     	System.out.println("Starting");
     	Worker.fork(new StartAuthTask());    	
