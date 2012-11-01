@@ -12,7 +12,6 @@ import javax.microedition.lcdui.Displayable;
 import javax.microedition.lcdui.Form;
 import javax.microedition.lcdui.Item;
 import javax.microedition.lcdui.ItemCommandListener;
-import javax.microedition.lcdui.List;
 import javax.microedition.lcdui.StringItem;
 import javax.microedition.midlet.MIDletStateChangeException;
 
@@ -22,9 +21,8 @@ import org.json.me.JSONObject;
 
 import com.futurice.tantalum3.TantalumMIDlet;
 import com.futurice.tantalum3.Workable;
-import com.futurice.tantalum3.Worker;
+
 import com.futurice.tantalum3.log.L;
-import com.futurice.tantalum3.net.HttpGetter;
 import com.nokia.example.utils.BackStack;
 import com.nokia.example.utils.Commands;
 import com.w.AuthListener;
@@ -334,7 +332,9 @@ public class MyWall extends TantalumMIDlet implements AuthListener, CommandListe
 			
 		}	
 		try {
-			getItem(parent).put("__fetched", true);
+			JSONObject pi = getItem(parent);
+			if (pi != null)
+				pi.put("__fetched", true);
 		} catch (JSONException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -356,6 +356,8 @@ public class MyWall extends TantalumMIDlet implements AuthListener, CommandListe
 	}
 
 	private JSONObject getItem(String id ) {
+		if (id == null)
+			return null;
 		return (JSONObject) itemsHash.get(id);
 	}
 	
@@ -370,7 +372,8 @@ public class MyWall extends TantalumMIDlet implements AuthListener, CommandListe
 
 	protected void handleFolderSelect(final String k) {
 		// TODO Auto-generated method stub
-		final Form f = pushPage("Folder");
+		JSONObject fo = getItem(k);
+		final Form f = pushPage(fo.s("title"));
 		if (getItem(k).optBoolean("__fetched")) {
 			L.i("", "Already fetched " + k);			
 			listFiles(k, f);
