@@ -79,7 +79,7 @@ public class AuthSession {
 
 
 	public String getAccessToken() {
-    	if (currentState != "access_token_ok") {
+    	if (!currentState.equals("access_token_ok")) {
     		L.i("", "Access token not yet available, state = " + currentState);
     		return null;
     	}
@@ -122,6 +122,11 @@ public class AuthSession {
 		
 		
 	}
+	
+	public void resetState() {
+		RMSUtils.delete("authorizr_state");
+	}
+	
 	public void storeStateToDisk() {
 		byte[] state;
 		try {
@@ -168,8 +173,10 @@ public class AuthSession {
 	
 	public void finalizeAuthIfNeeded(Workable done) {
 		if (getAccessToken() != null) {
+			// we call out for the callback, even if token was received on earlier session
+			authListener.tokenAvailable(accessToken, refreshToken);
 			return;
-		}
+		}		
 		if (currentState.equals("browser_launched")) {
 			fetchTokenForSession(done);
 		} else {
@@ -185,7 +192,7 @@ public class AuthSession {
     	
     	sessionid = "";
     	serverUrl = "http://authorizr.herokuapp.com";    	
-    	String url = serverUrl + "/api/v1/create_session/" + credId + "?" + 
+    	String url = serverUrl + "/api/v1/create_session/" + credId + "/?" + 
     			"access_type=offline";
     			//"access_type=offline&approval_prompt=force";
     			
@@ -284,7 +291,7 @@ public class AuthSession {
     	try {
 			accessToken = resp.getString("access_token");
 			refreshToken = resp.s("refresh_token");
-			authListener.tokenReceived(accessToken, refreshToken);
+			authListener.tokenAvailable(accessToken, refreshToken);
 			
 		} catch (JSONException e1) {
 			// TODO Auto-generated catch block
