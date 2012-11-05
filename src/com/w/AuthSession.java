@@ -147,6 +147,18 @@ public class AuthSession {
 		} 
 	}
 
+	public void refreshAccessToken() {
+		L.i("", "Refreshing access token");
+    	String refresh_token_url = serverUrl+"/api/v1/refresh_access_token/" + credId + "/?refresh_token=" + refreshToken;
+    	JSONObject resp = getJSON(refresh_token_url);
+    	
+		accessToken = resp.s("access_token");
+		// refreshToken = resp.s("refresh_token");
+		authListener.tokenAvailable(accessToken, refreshToken);
+		storeStateToDisk();
+		
+		
+	}
 	public void restoreStateFromDisk() {
 		byte[] state;
 		state = RMSUtils.read("authorizr_state");
@@ -172,6 +184,11 @@ public class AuthSession {
 	}
 	
 	public void finalizeAuthIfNeeded(Workable done) {
+		if (refreshToken.length() > 0) {
+			
+			refreshAccessToken();
+			return;
+		}
 		if (getAccessToken() != null) {
 			// we call out for the callback, even if token was received on earlier session
 			authListener.tokenAvailable(accessToken, refreshToken);
@@ -187,14 +204,19 @@ public class AuthSession {
 	}
 	
 
+	public void reauthenticate() {
+		currentState = "uninitialized";
+		initAuth();
+		
+	}
 	
     private void initAuth() {
     	
     	sessionid = "";
     	serverUrl = "http://authorizr.herokuapp.com";    	
     	String url = serverUrl + "/api/v1/create_session/" + credId + "/?" + 
-    			"access_type=offline";
-    			//"access_type=offline&approval_prompt=force";
+    			//"access_type=offline";
+    			"access_type=offline&approval_prompt=force";
     			
     			
     	/*
@@ -288,15 +310,10 @@ public class AuthSession {
     	String access_token_url = serverUrl+"/api/v1/fetch_access_token/" + sessionid + "/";
     	JSONObject resp = getJSON(access_token_url);
     	
-    	try {
-			accessToken = resp.getString("access_token");
-			refreshToken = resp.s("refresh_token");
-			authListener.tokenAvailable(accessToken, refreshToken);
+		accessToken = resp.s("access_token");
+		refreshToken = resp.s("refresh_token");
+		authListener.tokenAvailable(accessToken, refreshToken);
 			
-		} catch (JSONException e1) {
-			// TODO Auto-generated catch block
-			e1.printStackTrace();
-		}
     	currentState = "access_token_ok";
     	storeStateToDisk();
         L.i("", "Access token now " + accessToken);

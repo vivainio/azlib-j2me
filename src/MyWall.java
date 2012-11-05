@@ -111,6 +111,7 @@ public class MyWall extends TantalumMIDlet implements AuthListener, CommandListe
 	
 	protected void pauseApp() {
 		// TODO Auto-generated method stub
+		L.i("", "app paused");
 
 	}
 
@@ -154,6 +155,7 @@ public class MyWall extends TantalumMIDlet implements AuthListener, CommandListe
 			public void commandAction(Command arg0, Item arg1) {
 				// TODO Auto-generated method stub
 				try {
+					L.i("Starting download", "");
 					platformRequest(url);
 				} catch (ConnectionNotFoundException e) {
 					// TODO Auto-generated catch block
@@ -176,7 +178,21 @@ public class MyWall extends TantalumMIDlet implements AuthListener, CommandListe
 		f.append(new StringItem("Name", o.s("originalFilename")));
 		f.append(new StringItem("Size", o.s("fileSize")));
 		
-		f.append(urlButton("Download", o.s("webContentLink")));			
+		f.append(urlButton("Download", o.s("webContentLink")));
+		
+		JSONObject exportLinks = o.o("exportLinks");
+		if (exportLinks!= null) {
+			Enumeration keys = exportLinks.keys();
+			
+			while (keys.hasMoreElements()) {
+				String key = (String) keys.nextElement();
+				String val = exportLinks.s(key);
+				if (key.startsWith("application/")) {
+					key = key.substring(12);
+				}
+				f.append(urlButton(key, val));
+			}
+		}
 		
 		f.append(o.toString());
 		
@@ -409,6 +425,7 @@ public class MyWall extends TantalumMIDlet implements AuthListener, CommandListe
 			public Object exec(Object in) {
 				// TODO Auto-generated method stub
 				final JSONObject res = (JSONObject) in;
+				checkError(res);
 				parseFileList(res);
 				resultHnd.exec(res);
 				return null;
@@ -418,6 +435,27 @@ public class MyWall extends TantalumMIDlet implements AuthListener, CommandListe
 		
 	}
 	
+	protected void checkError(JSONObject res) {
+		// TODO Auto-generated method stub
+		if (res.has("error")) {
+			try {
+				int code = res.o("error").getInt("code");
+				if (code == 401) {
+					L.i("", "Auth expired");
+					ses.reauthenticate();
+				}
+			} catch (JSONException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+			
+			
+		}
+				
+		
+		
+	}
+
 	private void startListFiles() {
 		L.i("", "Listing files");
 		 // "mimeType = 'application/vnd.google-apps.folder'",
