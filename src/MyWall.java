@@ -1,3 +1,4 @@
+import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.util.Enumeration;
 import java.util.Hashtable;
@@ -25,6 +26,7 @@ import com.futurice.tantalum3.Workable;
 import com.futurice.tantalum3.log.L;
 import com.nokia.example.utils.BackStack;
 import com.nokia.example.utils.Commands;
+import com.nokia.mid.ui.*;
 import com.w.AuthListener;
 import com.w.AuthSession;
 
@@ -51,6 +53,7 @@ public class MyWall extends TantalumMIDlet implements AuthListener, CommandListe
 	private Hashtable itemsHash;
 	private Hashtable children;
 	private Command resetCommand;
+	private Command uploadCommand;
 	
 	
 	public MyWall() {
@@ -78,6 +81,9 @@ public class MyWall extends TantalumMIDlet implements AuthListener, CommandListe
 		resetCommand = new Command("Reset auth state", Command.SCREEN, 0);
 		mainForm.addCommand(resetCommand);
 		
+		uploadCommand = new Command("Upload", Command.SCREEN,0);
+		mainForm.addCommand(uploadCommand);
+		
 		startButton = new StringItem("Start auth flow", "Start", Item.BUTTON);
 		mainForm.append(startButton);
 		startButton.setDefaultCommand(
@@ -95,12 +101,6 @@ public class MyWall extends TantalumMIDlet implements AuthListener, CommandListe
 		
 		mainForm.setCommandListener(this);
 				
-		ses = new AuthSession();
-		ses.setServerUrl("http://authorizr.herokuapp.com");
-		ses.setCredId("486f832ea89e487cb9e3405b60632c31");
-		ses.setAuthListener(this);
-		ses.restoreStateFromDisk();
-		ses.finalizeAuthIfNeeded(null);
 	}
 
 	public void tokenReceived(String accessToken) {
@@ -109,6 +109,31 @@ public class MyWall extends TantalumMIDlet implements AuthListener, CommandListe
 		
 	}
 	
+	private void doUpload() {
+		String root = System.getProperty("fileconn.dir.music");
+		try {
+			
+			FileSelectDetail [] arrSelectedFiles = FileSelect.launch(root, FileSelect.MEDIA_TYPE_ALL, true);
+			for (int i=0; i < arrSelectedFiles.length; i++) {
+				FileSelectDetail d = arrSelectedFiles[i];				
+				L.i("", "To upload: " + d.url);
+			}
+			
+			
+		
+			
+			
+		} catch (IllegalArgumentException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		
+		
+		
+	}
 	protected void pauseApp() {
 		// TODO Auto-generated method stub
 		L.i("", "app paused");
@@ -119,7 +144,14 @@ public class MyWall extends TantalumMIDlet implements AuthListener, CommandListe
 		// TODO Auto-generated method stub
 		display.setCurrent(mainForm);
 		L.i("", "startApp");
+		ses = new AuthSession();
+		ses.setServerUrl("http://authorizr.herokuapp.com");
+		ses.setCredId("486f832ea89e487cb9e3405b60632c31");
+		ses.setAuthListener(this);
+		ses.restoreStateFromDisk();
+		ses.finalizeAuthIfNeeded(null);
 
+		
 	}
 	
 
@@ -257,6 +289,10 @@ public class MyWall extends TantalumMIDlet implements AuthListener, CommandListe
 		
 		if (arg0 == resetCommand) {
 			ses.resetState();
+		}
+		
+		if (arg0 == uploadCommand) {
+			doUpload();			
 		}
 		
 	}

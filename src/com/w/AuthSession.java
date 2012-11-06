@@ -184,7 +184,7 @@ public class AuthSession {
 	}
 	
 	public void finalizeAuthIfNeeded(Workable done) {
-		if (refreshToken.length() > 0) {
+		if (refreshToken != null && refreshToken.length() > 0) {
 			
 			refreshAccessToken();
 			return;
