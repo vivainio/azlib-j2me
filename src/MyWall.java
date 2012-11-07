@@ -196,7 +196,7 @@ public class MyWall extends TantalumMIDlet implements AuthListener,
 	*/
 	
 	private void doUpload() {
-		String root = System.getProperty("fileconn.dir.music");
+		String root = System.getProperty("fileconn.dir.photos");
 		try {
 
 			
@@ -212,7 +212,7 @@ public class MyWall extends TantalumMIDlet implements AuthListener,
 			byte[] bytes = byteout.toByteArray();
 			
 			L.i("", "Post to " + url);
-			//L.i("", "Data: " + data);
+			L.i("", new String(bytes, "UTF-8"));
 			Hashtable headers = new Hashtable();
 			headers.put("Content-Type", "multipart/mixed; boundary=\"foo_bar_baz\"");
 			//headers.put("Content-Length", String.valueOf((bytes.length)));
@@ -665,7 +665,7 @@ public class MyWall extends TantalumMIDlet implements AuthListener,
 		final String boundary = "foo_bar_baz";
 		final String delimiter = "\r\n--" + boundary + "\r\n";
 		final String close_delim = "\r\n--" + boundary + "--";
-		final String contentType = "text/plain";
+		final String contentType = "application/octet-stream";
 		
 		
 		String filename = url.substring(url.lastIndexOf('/') + 1);
@@ -713,8 +713,9 @@ public class MyWall extends TantalumMIDlet implements AuthListener,
 		
 		emit(ostream, multipartprelude);
 
-		byte[] block = new byte[256];
+		byte[] block = new byte[255];
 
+		int written = 0;
 		try {
 			for (;;) {
 				int done = istream.read(block);
@@ -722,8 +723,14 @@ public class MyWall extends TantalumMIDlet implements AuthListener,
 					break;
 				}
 				byte[] out = encoder.encode(block);
+				
 				ostream.write(out);
+				//ostream.write('\r');
+				//ostream.write('\n');
+				
 			};
+			//ostream.write('\r');
+			//ostream.write('\n');
 		} catch (IOException e) {
 			// TODO: handle exception
 			e.printStackTrace();
