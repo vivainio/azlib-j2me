@@ -18,9 +18,16 @@ import com.futurice.tantalum3.net.json.JSONModel;
 import com.futurice.tantalum3.rms.RMSUtils;
 
 
+
 public class AuthSession {
 
 
+
+	public final String STATE_ACCESS_TOKEN_OK = "access_token_ok";
+	public final String STATE_BROWSER_LAUNCHED = "browser_launched";
+	public final String STATE_UNINITIALIZED = "uninitialized";
+	
+	
 	
 	AuthListener authListener;
 	
@@ -79,7 +86,7 @@ public class AuthSession {
 
 
 	public String getAccessToken() {
-    	if (!currentState.equals("access_token_ok")) {
+    	if (!currentState.equals(STATE_ACCESS_TOKEN_OK)) {
     		L.i("", "Access token not yet available, state = " + currentState);
     		return null;
     	}
@@ -124,7 +131,11 @@ public class AuthSession {
 	}
 	
 	public void resetState() {
-		RMSUtils.delete("authorizr_state");
+		
+		currentState = STATE_UNINITIALIZED;
+		accessToken = "";
+		refreshToken = "";
+		storeStateToDisk();
 	}
 	
 	public void storeStateToDisk() {
@@ -133,7 +144,7 @@ public class AuthSession {
 			JSONObject stateJson = getStateJson();
 			state = stateJson.toString().getBytes("UTF-8");
 			L.i("Storing state", stateJson.toString(2));
-			RMSUtils.write("authorizr_state", stateJson.toString().getBytes("UTF-8"));
+			RMSUtils.write("authorizr_state", state);
 		} catch (UnsupportedEncodingException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -154,8 +165,12 @@ public class AuthSession {
     	
 		accessToken = resp.s("access_token");
 		// refreshToken = resp.s("refresh_token");
-		authListener.tokenAvailable(accessToken, refreshToken);
+		currentState = STATE_ACCESS_TOKEN_OK;
 		storeStateToDisk();
+		authListener.tokenAvailable(accessToken, refreshToken);
+		
+		
+		
 		
 		
 	}
@@ -163,7 +178,7 @@ public class AuthSession {
 		byte[] state;
 		state = RMSUtils.read("authorizr_state");
 		if (state == null) {			
-			currentState = "uninitialized";
+			currentState = STATE_UNINITIALIZED;
 			return;
 		}
 		try {
@@ -194,7 +209,7 @@ public class AuthSession {
 			authListener.tokenAvailable(accessToken, refreshToken);
 			return;
 		}		
-		if (currentState.equals("browser_launched")) {
+		if (currentState.equals(STATE_BROWSER_LAUNCHED)) {
 			fetchTokenForSession(done);
 		} else {
 			L.i("AuthSession" , "Can't finalize, unknown state: " + currentState);
@@ -205,7 +220,8 @@ public class AuthSession {
 	
 
 	public void reauthenticate() {
-		currentState = "uninitialized";
+		currentState = STATE_UNINITIALIZED;
+		L.i("", "Forcing reauthentication");
 		initAuth();
 		
 	}
@@ -213,7 +229,7 @@ public class AuthSession {
     private void initAuth() {
     	
     	sessionid = "";
-    	serverUrl = "http://authorizr.herokuapp.com";    	
+    	//serverUrl = "http://authorizr.herokuapp.com";    	
     	String url = serverUrl + "/api/v1/create_session/" + credId + "/?" + 
     			//"access_type=offline";
     			"access_type=offline&approval_prompt=force";
@@ -265,7 +281,7 @@ public class AuthSession {
 		try {
 			sessionid = resp.getString("session_id");
 			String loginuri = resp.getString("url");
-			currentState = "browser_launched";
+			currentState = STATE_BROWSER_LAUNCHED;
 			storeStateToDisk();
 			authListener.browserLaunchNeeded(loginuri);
 			
@@ -314,7 +330,7 @@ public class AuthSession {
 		refreshToken = resp.s("refresh_token");
 		authListener.tokenAvailable(accessToken, refreshToken);
 			
-    	currentState = "access_token_ok";
+    	currentState = STATE_ACCESS_TOKEN_OK;
     	storeStateToDisk();
         L.i("", "Access token now " + accessToken);
                 
@@ -350,6 +366,9 @@ public class AuthSession {
     	
     }
 
+    public void doRequest() {
+    	
+    }
     
     public JSONObject getJSON(String url) {
     	JSONModel mdl = new JSONModel();

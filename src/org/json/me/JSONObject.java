@@ -25,6 +25,7 @@ SOFTWARE.
 */
 
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
 import java.io.Writer;
 import java.util.Enumeration;
 import java.util.Hashtable;
@@ -258,6 +259,26 @@ public class JSONObject {
     public JSONObject(String string) throws JSONException {
         this(new JSONTokener(string));
     }
+
+    public static JSONObject fromBytes(byte[] bytes) {
+    	try {
+			String s = new String(bytes, "UTF-8");
+			JSONObject o = new JSONObject(s);
+			return o;
+		} catch (UnsupportedEncodingException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+			return null;
+		} catch (JSONException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+			return null;
+		}
+    }
+    
+    
+    
+    
 
 
     /**
@@ -938,6 +959,7 @@ public class JSONObject {
      * @throws JSONException If the value is non-finite number
      *  or if the key is null.
      */
+    
     public JSONObject put(String key, Object value) throws JSONException {
         if (key == null) {
             throw new JSONException("Null key.");
@@ -1096,6 +1118,7 @@ public class JSONObject {
      *  with <code>{</code>&nbsp;<small>(left brace)</small> and ending
      *  with <code>}</code>&nbsp;<small>(right brace)</small>.
      */
+   
     public String toString() {
         try {
             Enumeration keys = keys();
@@ -1117,7 +1140,7 @@ public class JSONObject {
         }
     }
 
-
+    
     /**
      * Make a prettyprinted JSON text of this JSONObject.
      * <p>

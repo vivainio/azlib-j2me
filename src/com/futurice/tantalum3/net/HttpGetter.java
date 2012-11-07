@@ -10,6 +10,9 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.util.Enumeration;
+import java.util.Hashtable;
+
 import javax.microedition.io.Connector;
 import javax.microedition.io.HttpConnection;
 
@@ -26,9 +29,40 @@ public class HttpGetter extends Task {
     private final String url;
     protected int retriesRemaining;
     protected byte[] postMessage = null;
-    protected String requestMethod = HttpConnection.GET;
+    public byte[] getPostMessage() {
+		return postMessage;
+	}
 
-    /**
+
+	public void setPostMessage(byte[] postMessage) {
+		this.postMessage = postMessage;
+	}
+
+
+	public String getRequestMethod() {
+		return requestMethod;
+	}
+
+
+	public void setRequestMethod(String requestMethod) {
+		this.requestMethod = requestMethod;
+	}
+
+	protected String requestMethod = HttpConnection.GET;
+
+    private Hashtable headers;
+    
+    public Hashtable getHeaders() {
+		return headers;
+	}
+
+
+	public void setHeaders(Hashtable headers) {
+		this.headers = headers;
+	}
+
+
+	/**
      * Get the contents of a URL and return that asynchronously as a AsyncResult
      *
      * @param url - where on the Internet to synchronousGet the data
@@ -43,6 +77,7 @@ public class HttpGetter extends Task {
         this.retriesRemaining = retriesRemaining;
     }
 
+    
     public String getUrl() {
         return this.url;
     }
@@ -60,6 +95,23 @@ public class HttpGetter extends Task {
         try {
             httpConnection = (HttpConnection) Connector.open(url);
             httpConnection.setRequestMethod(requestMethod);
+            
+            if (this.headers != null) {
+            	Enumeration keys = headers.keys();
+            	while (keys.hasMoreElements()) {
+            		String hk = (String) keys.nextElement();
+            		String val = (String) headers.get(hk);
+            		httpConnection.setRequestProperty(hk, val);
+            		L.i("", "Add header: " + hk + ": " + val);
+            		
+            		
+            	}
+            	
+            			
+            	
+            }
+                        
+            
             if (postMessage != null) {
                 outputStream = httpConnection.openDataOutputStream();
                 outputStream.write(postMessage);
