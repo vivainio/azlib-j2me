@@ -194,7 +194,7 @@ public class MyWall extends TantalumMIDlet implements AuthListener,
 			
 			
 			String data = uploadData();
-			String url = "https://www.googleapis.com/upload/drive/v2/files?uploadType=media&access_token=" + ses.getAccessToken();
+			String url = "https://www.googleapis.com/upload/drive/v2/files?uploadType=multipart&access_token=" + ses.getAccessToken();
 			
 			
 			byte[] bytes = data.getBytes("UTF-8");
@@ -204,7 +204,7 @@ public class MyWall extends TantalumMIDlet implements AuthListener,
 			L.i("", "Post to " + url);
 			L.i("", "Data: " + data);
 			Hashtable headers = new Hashtable();
-			headers.put("Content-Type:", "multipart/related; boundary=\"foo_bar_baz\"");
+			headers.put("Content-Type", "multipart/mixed; boundary=\"foo_bar_baz\"");
 			headers.put("Content-Length", String.valueOf((bytes.length)));
 			
 			HttpPoster post = new HttpPoster(url, 0, bytes);
@@ -427,7 +427,7 @@ public class MyWall extends TantalumMIDlet implements AuthListener,
 				
 				public void run() {
 					// TODO Auto-generated method stub
-					doUpload2();
+					doUpload();
 					
 				}
 			});
