@@ -1,4 +1,8 @@
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.OutputStream;
 import java.io.UnsupportedEncodingException;
 import java.util.Enumeration;
 import java.util.Hashtable;
@@ -6,8 +10,8 @@ import java.util.Timer;
 import java.util.Vector;
 
 import javax.microedition.io.ConnectionNotFoundException;
-import javax.microedition.io.HttpConnection;
-import javax.microedition.io.HttpsConnection;
+import javax.microedition.io.Connector;
+import javax.microedition.io.file.FileConnection;
 import javax.microedition.lcdui.Command;
 import javax.microedition.lcdui.CommandListener;
 import javax.microedition.lcdui.Display;
@@ -18,6 +22,9 @@ import javax.microedition.lcdui.ItemCommandListener;
 import javax.microedition.lcdui.StringItem;
 import javax.microedition.midlet.MIDletStateChangeException;
 
+import org.apache.commons.codec.binary.Base64;
+import org.helyx.basics4me.io.BufferedReader;
+import org.helyx.basics4me.lang.UrlUtil;
 import org.json.me.JSONArray;
 import org.json.me.JSONException;
 import org.json.me.JSONObject;
@@ -121,6 +128,7 @@ public class MyWall extends TantalumMIDlet implements AuthListener,
 
 	}
 
+	/*
 	private void doUpload2() {
 		String url = "https://www.googleapis.com/upload/drive/v2/files?uploadType=media&access_token=" + ses.getAccessToken();
 		String data = "hello world";
@@ -184,6 +192,9 @@ public class MyWall extends TantalumMIDlet implements AuthListener,
 		
 		
 	}
+	
+	*/
+	
 	private void doUpload() {
 		String root = System.getProperty("fileconn.dir.music");
 		try {
@@ -193,19 +204,18 @@ public class MyWall extends TantalumMIDlet implements AuthListener,
 					FileSelect.MEDIA_TYPE_ALL, true);
 			
 			
-			String data = uploadData();
+			ByteArrayOutputStream byteout = new ByteArrayOutputStream();
+			uploadData(arrSelectedFiles[0].url, byteout);
 			String url = "https://www.googleapis.com/upload/drive/v2/files?uploadType=multipart&access_token=" + ses.getAccessToken();
 			
 			
-			byte[] bytes = data.getBytes("UTF-8");
-			
-			
+			byte[] bytes = byteout.toByteArray();
 			
 			L.i("", "Post to " + url);
-			L.i("", "Data: " + data);
+			//L.i("", "Data: " + data);
 			Hashtable headers = new Hashtable();
 			headers.put("Content-Type", "multipart/mixed; boundary=\"foo_bar_baz\"");
-			headers.put("Content-Length", String.valueOf((bytes.length)));
+			//headers.put("Content-Length", String.valueOf((bytes.length)));
 			
 			HttpPoster post = new HttpPoster(url, 0, bytes);
 			post.setHeaders(headers);
@@ -636,7 +646,21 @@ public class MyWall extends TantalumMIDlet implements AuthListener,
 		});
 	}
 
-	private String uploadData() {
+	
+	private static void emit(OutputStream os, String data) {
+		try {
+			os.write(data.getBytes("UTF-8"));
+		} catch (UnsupportedEncodingException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		
+	}
+	
+	private void uploadData(String url, OutputStream ostream) {
 		
 		final String boundary = "foo_bar_baz";
 		final String delimiter = "\r\n--" + boundary + "\r\n";
@@ -644,10 +668,14 @@ public class MyWall extends TantalumMIDlet implements AuthListener,
 		final String contentType = "text/plain";
 		
 		
-		String filename = "testfile.txt";
+		String filename = url.substring(url.lastIndexOf('/') + 1);
+		
 		final JSONObject m = new JSONObject();
 		
 		
+		
+		
+
 		try {
 			m.put("title", filename).put("mimeType", contentType).put("originalFileName", filename).put("parents", new Vector());
 			
@@ -656,20 +684,52 @@ public class MyWall extends TantalumMIDlet implements AuthListener,
 			e.printStackTrace();
 		}
 		
-		// Hello world in base64
-		String base64data = "SGVsbG8gd29ybGQ=";
 		
-		final String multipartbody = delimiter + "Content-Type: application/json\r\n\r\n" + 
+		
+		
+		
+		Base64 encoder = new Base64();
+		
+		
+		InputStream istream = null;
+		try {
+			FileConnection f = (FileConnection) Connector.open(url);
+			istream = f.openInputStream();
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			// file not found
+			e.printStackTrace();
+		}
+		
+		
+		// Hello world in base64
+		
+		
+		
+		final String multipartprelude = delimiter + "Content-Type: application/json\r\n\r\n" + 
 		m.toString() + delimiter + "Content-Type: " + contentType + "\r\n" + 
 				"Content-Transfer-Encoding: base64\r\n" + 
-				"\r\n" + base64data + close_delim;
+				"\r\n";
 		
+		emit(ostream, multipartprelude);
+
+		byte[] block = new byte[256];
+
+		try {
+			for (;;) {
+				int done = istream.read(block);
+				if (done < 1) {
+					break;
+				}
+				byte[] out = encoder.encode(block);
+				ostream.write(out);
+			};
+		} catch (IOException e) {
+			// TODO: handle exception
+			e.printStackTrace();
+		}
 		
-		
-		
-		
-		
-		return multipartbody;
+		emit(ostream, close_delim);
 		
 	}
 	public void tokenAvailable(String accessToken, String refreshToken) {

@@ -113,7 +113,7 @@ public class HttpGetter extends Task {
                         
             
             if (postMessage != null) {
-                outputStream = httpConnection.openDataOutputStream();
+                outputStream = httpConnection.openOutputStream();
                 outputStream.write(postMessage);
             }
             inputStream = httpConnection.openInputStream();
