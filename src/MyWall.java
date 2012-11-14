@@ -39,6 +39,7 @@ import com.futurice.tantalum3.net.HttpPoster;
 import com.nokia.example.utils.BackStack;
 import com.nokia.example.utils.Commands;
 import com.nokia.mid.ui.*;
+import com.w.AuthCanvas;
 import com.w.AuthListener;
 import com.w.AuthSession;
 
@@ -64,6 +65,7 @@ public class MyWall extends TantalumMIDlet implements AuthListener,
 	private Hashtable children;
 	private Command resetCommand;
 	private Command uploadCommand;
+	private AuthCanvas authCanvas;
 
 	public MyWall() {
 		super(2);
@@ -98,7 +100,10 @@ public class MyWall extends TantalumMIDlet implements AuthListener,
 		mainForm.append(startButton);
 
 		startButton.setDefaultCommand(new Command("Set", Command.ITEM, 1));
-
+		
+		authCanvas = new AuthCanvas("","Launching browser");
+		authCanvas.setMidlet(this);
+		
 		mainForm.setCommandListener(this);
 
 
@@ -285,8 +290,11 @@ public class MyWall extends TantalumMIDlet implements AuthListener,
 
 	protected void startApp() throws MIDletStateChangeException {
 		// TODO Auto-generated method stub
-		display.setCurrent(mainForm);
+		//display.setCurrent(mainForm);
+		
+		display.setCurrent(authCanvas);
 
+		/*
 		configureStartButton("Init", new Workable() {
 
 			public Object exec(Object in) {
@@ -294,15 +302,33 @@ public class MyWall extends TantalumMIDlet implements AuthListener,
 				ses.startAuth();
 				return null;
 			}
-		});
+		})
+		;
+		*/
 		
 		L.i("", "startApp");
 		ses = new AuthSession();
+		authCanvas.setAuthSession(ses);
 		ses.setServerUrl("http://authorizr.herokuapp.com");
 		ses.setCredId("fdfe9bee210d49cea0a9044ff16d4c8f");
-		ses.setAuthListener(this);
-		ses.restoreStateFromDisk();
-		ses.finalizeAuthIfNeeded(null);
+		ses.setAuthListener(authCanvas);
+		
+		//ses.restoreStateFromDisk();
+		//ses.finalizeAuthIfNeeded(null);
+		ses.resetState();
+		ses.startAuth();
+		authCanvas.setAuthOkHandler(new Runnable() {
+			
+			public void run() {
+				L.i("" , "Auth ok, showing main view");
+				display.setCurrent(mainForm);
+				// TODO Auto-generated method stub
+				
+			}
+		});
+		//authCanvas.
+		
+		//authCanvas.repaint();
 		
 	}
 
@@ -759,7 +785,7 @@ public class MyWall extends TantalumMIDlet implements AuthListener,
 			int len = items.length();
 
 			// mainForm.delete(0);
-			for (int i = 0; i < len; i += 1) {
+			for(int i = 0; i < len; i += 1) {
 				JSONObject obj = items.getJSONObject(i);
 				// L.i("Handling", obj.toString(2));
 				final String idd = obj.s("id");
@@ -803,7 +829,7 @@ public class MyWall extends TantalumMIDlet implements AuthListener,
 
 				/*
 				 * it.setItemCommandListener(new ItemCommandListener() {
-				 * 
+			 * 
 				 * public void commandAction(Command arg0, Item arg1) { // TODO
 				 * Auto-generated method stub L.i("", "Will fetch " + title +
 				 * " " + link); String tgt = link +

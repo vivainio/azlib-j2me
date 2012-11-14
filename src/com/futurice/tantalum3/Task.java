@@ -214,6 +214,7 @@ public abstract class Task implements Workable {
                 result = in;
                 setStatus(EXEC_STARTED);
             }
+            L.i("Tast", "Start " + this);
             final Object r = doInBackground(in);
             synchronized (this) {
                 result = r;
@@ -222,6 +223,7 @@ public abstract class Task implements Workable {
             setStatus(EXEC_FINISHED);
             
             if (onFinishHandler != null) {
+            	L.i("Task", "Exec onFinishHandler");
             	onFinishHandler.exec(r);
             }
             if (this instanceof Runnable) {

@@ -198,7 +198,7 @@ public class AuthSession {
 		}
 	}
 	
-	public void finalizeAuthIfNeeded(Workable done) {
+	public void finalizeAuthIfNeeded(Runnable done) {
 		if (refreshToken != null && refreshToken.length() > 0) {
 			
 			refreshAccessToken();
@@ -338,7 +338,7 @@ public class AuthSession {
     private class FetchTokenTask extends Task {
 
 		protected Object doInBackground(Object in) {
-			// TODO Auto-generated method stub
+			// TODO Auto-generated method stub			
 			doFetchToken();
 			return accessToken;
 			
@@ -346,10 +346,16 @@ public class AuthSession {
     	
     }
     
-    public void fetchTokenForSession(Workable done) {
+    public void fetchTokenForSession(final Runnable done) {
     	FetchTokenTask task = new FetchTokenTask();
     	if (done != null) {
-    		task.finished(done);
+    		task.finished(new Workable() {
+				
+				public Object exec(Object in) {
+					done.run();
+					return null;
+				}
+			});
     	}
     		
     	Worker.fork(task);    	
