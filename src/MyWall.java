@@ -200,11 +200,12 @@ public class MyWall extends TantalumMIDlet implements
 	
 	*/
 	
+	
 	private void doUpload() {
 		String root = System.getProperty("fileconn.dir.photos");
 		try {
 
-			
+			/*
 			FileSelectDetail[] arrSelectedFiles = FileSelect.launch(root,
 					FileSelect.MEDIA_TYPE_ALL, true);
 			
@@ -252,6 +253,7 @@ public class MyWall extends TantalumMIDlet implements
 			
 			
 
+		/*
 		} catch (IllegalArgumentException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -259,6 +261,8 @@ public class MyWall extends TantalumMIDlet implements
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
+		*/
+		} finally {};
 
 	}
 
