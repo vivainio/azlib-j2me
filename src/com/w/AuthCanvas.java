@@ -127,15 +127,7 @@ public class AuthCanvas extends Canvas implements AuthListener {
 					
 					setContent("Fetching token");
 					repaint();
-					authSession.fetchTokenForSession(new Runnable() {
-						
-						public void run() {
-							// TODO Auto-generated method stub
-							L.i("", "Run authOkHandler" + authOkHandler );
-							authOkHandler.run();
-							
-						}
-					});
+					authSession.fetchTokenForSession(null);
 					
 				}
 			});
@@ -152,6 +144,7 @@ public class AuthCanvas extends Canvas implements AuthListener {
 
 	public void tokenAvailable(String accessToken, String refreshToken) {
 		// TODO Auto-generated method stub
+		authOkHandler.run();
 		
 	}
 

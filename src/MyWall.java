@@ -43,7 +43,7 @@ import com.w.AuthCanvas;
 import com.w.AuthListener;
 import com.w.AuthSession;
 
-public class MyWall extends TantalumMIDlet implements AuthListener,
+public class MyWall extends TantalumMIDlet implements
 		CommandListener {
 
 	private Command exitCmd; // The exit command...
@@ -57,7 +57,7 @@ public class MyWall extends TantalumMIDlet implements AuthListener,
 
 	Timer timer;
 	private Command startAuthCommand;
-	private StringItem startButton;
+	//private StringItem startButton;
 	private BackStack backStack;
 	private Form fileForm;
 
@@ -96,10 +96,10 @@ public class MyWall extends TantalumMIDlet implements AuthListener,
 		uploadCommand = new Command("Upload", Command.SCREEN, 0);
 		mainForm.addCommand(uploadCommand);
 
-		startButton = new StringItem("", "N/A", Item.BUTTON);
-		mainForm.append(startButton);
+		//startButton = new StringItem("", "N/A", Item.BUTTON);
+		//mainForm.append(startButton);
 
-		startButton.setDefaultCommand(new Command("Set", Command.ITEM, 1));
+		//startButton.setDefaultCommand(new Command("Set", Command.ITEM, 1));
 		
 		authCanvas = new AuthCanvas("","Launching browser");
 		authCanvas.setMidlet(this);
@@ -268,7 +268,8 @@ public class MyWall extends TantalumMIDlet implements AuthListener,
 
 	}
 
-	void configureStartButton(final String label, final Workable pressed) {
+	/*
+	void configureStartButton(final String label, final Workable pressed) {		
 		L.i("", "Configure start button = " + label);
 		later(new Runnable() {			
 			public void run() {
@@ -287,6 +288,7 @@ public class MyWall extends TantalumMIDlet implements AuthListener,
 			}
 		});
 	}
+	*/
 
 	protected void startApp() throws MIDletStateChangeException {
 		// TODO Auto-generated method stub
@@ -309,29 +311,34 @@ public class MyWall extends TantalumMIDlet implements AuthListener,
 		L.i("", "startApp");
 		ses = new AuthSession();
 		authCanvas.setAuthSession(ses);
-		ses.setServerUrl("http://authorizr.herokuapp.com");
-		ses.setCredId("fdfe9bee210d49cea0a9044ff16d4c8f");
-		ses.setAuthListener(authCanvas);
-		
-		//ses.restoreStateFromDisk();
-		//ses.finalizeAuthIfNeeded(null);
-		ses.resetState();
-		ses.startAuth();
 		authCanvas.setAuthOkHandler(new Runnable() {
 			
 			public void run() {
 				L.i("" , "Auth ok, showing main view");
 				display.setCurrent(mainForm);
+				startListFiles();
+				
 				// TODO Auto-generated method stub
 				
 			}
 		});
+
+		ses.setServerUrl("http://authorizr.herokuapp.com");
+		ses.setCredId("fdfe9bee210d49cea0a9044ff16d4c8f");
+		ses.setAuthListener(authCanvas);
+		
+		ses.restoreStateFromDisk();
+		ses.finalizeAuthIfNeeded(null);
+		// uncomment if want to test the full flow
+		//ses.resetState();
+		//ses.startAuth();
 		//authCanvas.
 		
 		//authCanvas.repaint();
 		
 	}
 
+	/*
 	public void browserLaunchNeeded(String url) {
 		try {
 			platformRequest(url);
@@ -341,9 +348,9 @@ public class MyWall extends TantalumMIDlet implements AuthListener,
 			e.printStackTrace();
 		}
 
-		startButton.setLabel("Click here after browser is closed");
-		startButton.setText("Fetch access token");
-		startButton.setItemCommandListener(new ItemCommandListener() {
+		//startButton.setLabel("Click here after browser is closed");
+		//startButton.setText("Fetch access token");
+		//startButton.setItemCommandListener(new ItemCommandListener() {
 
 			public void commandAction(Command arg0, Item arg1) {
 				ses.fetchTokenForSession(null);
@@ -353,6 +360,7 @@ public class MyWall extends TantalumMIDlet implements AuthListener,
 		// TODO Auto-generated method stub
 
 	}
+	*/
 
 	private StringItem urlButton(final String text, final String url) {
 		StringItem item = new StringItem("", text, Item.BUTTON);
@@ -765,9 +773,12 @@ public class MyWall extends TantalumMIDlet implements AuthListener,
 		emit(ostream, close_delim);
 		
 	}
+	
 	public void tokenAvailable(String accessToken, String refreshToken) {
 		// TODO Auto-generated method stub
 		L.i("", "Token available :" + accessToken + " refresh " + refreshToken);
+		//startListFiles();
+		/*
 		configureStartButton("Get", new Workable() {
 
 			public Object exec(Object in) {
@@ -776,6 +787,7 @@ public class MyWall extends TantalumMIDlet implements AuthListener,
 				return null;
 			}
 		});
+		*/
 
 	}
 
