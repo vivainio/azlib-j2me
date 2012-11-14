@@ -101,7 +101,7 @@ public class MyWall extends TantalumMIDlet implements
 
 		//startButton.setDefaultCommand(new Command("Set", Command.ITEM, 1));
 		
-		authCanvas = new AuthCanvas("","Launching browser");
+		authCanvas = new AuthCanvas("","Authenticating");
 		authCanvas.setMidlet(this);
 		
 		mainForm.setCommandListener(this);
@@ -393,7 +393,9 @@ public class MyWall extends TantalumMIDlet implements
 		Form f = fileForm;
 		f.deleteAll();
 
-		f.append(new StringItem("Name", o.s("originalFilename")));
+		
+		//String title = o.s("")
+		f.append(new StringItem("Name", o.s("title")));
 		f.append(new StringItem("Size", o.s("fileSize")));
 
 		f.append(urlButton("Download", o.s("webContentLink")));
@@ -412,7 +414,12 @@ public class MyWall extends TantalumMIDlet implements
 			}
 		}
 
-		f.append(o.toString());
+		try {
+			f.append(o.toString(2));
+		} catch (JSONException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 
 	}
 

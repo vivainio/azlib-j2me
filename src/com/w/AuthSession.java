@@ -199,6 +199,10 @@ public class AuthSession {
 	}
 	
 	public void finalizeAuthIfNeeded(Runnable done) {
+		if (currentState.equals(STATE_UNINITIALIZED)) {
+			startAuth();
+			return;
+		}
 		if (refreshToken != null && refreshToken.length() > 0) {
 			
 			refreshAccessToken();
