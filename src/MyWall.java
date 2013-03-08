@@ -656,7 +656,12 @@ public class MyWall extends TantalumMIDlet implements
 				int code = res.o("error").getInt("code");
 				if (code == 401) {
 					L.i("", "Auth expired");
-					ses.reauthenticate();
+					if (ses.haveRefreshToken()) {
+						ses.refreshAccessToken();
+					} else {
+						ses.reauthenticate();
+						
+					}
 					return true;
 				}
 				
@@ -679,6 +684,7 @@ public class MyWall extends TantalumMIDlet implements
 	private void startListFiles() {
 		L.i("", "Listing files");
 		// "mimeType = 'application/vnd.google-apps.folder'",
+		mainForm.append("Fetching files...");
 		startQuery("'root' in parents",
 
 		new Workable() {

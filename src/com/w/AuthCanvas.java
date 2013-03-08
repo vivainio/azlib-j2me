@@ -142,9 +142,14 @@ public class AuthCanvas extends Canvas implements AuthListener {
 	}
 
 
+	
 	public void tokenAvailable(String accessToken, String refreshToken) {
 		// TODO Auto-generated method stub
-		authOkHandler.run();
+		if (this.authOkHandler != null) {
+			setContent("Authenticated");
+			repaint();
+			authOkHandler.run();
+		}
 		
 	}
 

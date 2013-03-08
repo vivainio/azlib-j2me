@@ -73,6 +73,10 @@ public class AuthSession {
 	private String currentState;
     private String accessToken;
 	private String refreshToken;
+	public String getRefreshToken() {
+		return refreshToken;
+	}
+
 	private String credId;
     
     public String getCredId() {
@@ -93,6 +97,8 @@ public class AuthSession {
     	
 		return accessToken;
 	}
+	
+
     
 
 	public void setArg(String key, String value) {
@@ -157,7 +163,7 @@ public class AuthSession {
 			e.printStackTrace();
 		} 
 	}
-
+	
 	public void refreshAccessToken() {
 		L.i("", "Refreshing access token");
     	String refresh_token_url = serverUrl+"/api/v1/refresh_access_token/" + credId + "/?refresh_token=" + refreshToken;
@@ -198,13 +204,16 @@ public class AuthSession {
 		}
 	}
 	
+	public boolean haveRefreshToken() {
+		return (refreshToken != null && refreshToken.length() > 0);
+	}
+	
 	public void finalizeAuthIfNeeded(Runnable done) {
 		if (currentState.equals(STATE_UNINITIALIZED)) {
 			startAuth();
 			return;
 		}
-		if (refreshToken != null && refreshToken.length() > 0) {
-			
+		if (haveRefreshToken()) {			
 			refreshAccessToken();
 			return;
 		}
@@ -222,7 +231,7 @@ public class AuthSession {
 		
 	}
 	
-
+	
 	public void reauthenticate() {
 		currentState = STATE_UNINITIALIZED;
 		L.i("", "Forcing reauthentication");
